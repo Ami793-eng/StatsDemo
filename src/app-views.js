@@ -36,17 +36,14 @@ function sbPanel(m,t){
     ${bloods.map(e=>`<div class="sbrow"><span class="cardico blood"></span><span class="who">Blood sub: ${esc(pName(t,e.onId))} on for ${esc(pName(t,e.pid))}</span>${canScore(m)?`<button class="btn sm" data-act="bloodret" data-id="${e.id}">${esc(OG.first((player(t,e.pid)||{}).name)||'Player')} back on</button>`:''}</div>`).join('')}</div>`;
 }
 function lastBar(m,t){
-  const e=m.events[m.events.length-1];if(!e)return '<div class="lastbar"><span class="muted">Nothing logged yet</span></div>';
-  const needP=!e.pid&&e.side==='us'&&['tow','tol','fwon','fcon'].includes(e.type);
-  return `<div class="lastbar"><span><b>${esc(lbl(e.type,m.code))}</b>${e.pid?' · '+esc(pName(t,e.pid)):''}${e.side==='them'?' · '+esc(m.opp):''} <span class="muted">${isPlaying(e.per)?OG.minOf(e.sec,OG.halfOf(m,e.per)):''}</span></span>
-    <span class="row">${needP?`<button class="btn sm" data-act="addPlayer" data-id="${e.id}">Add player</button>`:''}<button class="btn sm amb" data-act="undo">Undo</button></span></div>`;
+  const e=m.events[m.events.length-1];if(!e)return '<div class="lastbar"><span class="muted">Nothing logged yet. Tap a button: it logs at once with the match time.</span></div>';
+  return `<div class="lastbar"><span><b>${esc(lbl(e.type,m.code))}</b>${e.side==='them'?' · '+esc(m.opp):e.pid?' · '+esc(pName(t,e.pid)):''} <span class="muted">${isPlaying(e.per)?OG.minOf(e.sec,OG.halfOf(m,e.per)):''}</span></span>
+    <span class="row">${e.side==='us'&&PICK_TYPES.includes(e.type)?`<button class="btn sm" data-act="addPlayer" data-id="${e.id}">${e.pid?'Change player':'Add player'}</button>`:''}<button class="btn sm amb" data-act="undo">Undo</button></span></div>`;
 }
 function vScorer(m){
-  const t=team(m.teamId),c=m.clock,F=footy(m.code),two=F&&m.arc,ko=KO(m.code),gg=OG.tierOf(t)==='gogames';
+  const t=team(m.teamId),c=m.clock,two=footy(m.code)&&m.arc,ko=KO(m.code),gg=OG.tierOf(t)==='gogames';
   const runLbl=c.period===0?'Throw-in':c.running?'Time off':'Time on';
   const nextLbl=c.period===0?'Start 1st half':c.period===1?(ui.armed==='next'?'Confirm half time':'Half time'):c.period==='HT'?'Start 2nd half':c.period===2?(ui.armed==='next'?'Confirm full time':'Full time'):c.period===3?(ui.armed==='next'?'Confirm ET half time':'ET half time'):c.period==='ETH'?'Start ET 2nd half':c.period===4?(ui.armed==='next'?'Confirm end of ET':'End extra time'):'';
-  const K=(act,label,cls,extra)=>`<button class="key ${cls||''}" data-act="${act}" ${extra||''}>${label}</button>`;
-  const q=(type,label,cls)=>K('quick',label,cls,`data-type="${type}"`);
   let ctrl;
   if(c.period==='FT'||c.period==='AET')ctrl=`<div class="ctrl">${c.period==='FT'&&!gg?`<button class="btn${A('et')}" data-act="et">${ui.armed==='et'?'Confirm extra time':'Extra time'}</button>`:''}<button class="btn run-off${A('finish')}" data-act="finish">${ui.armed==='finish'?'Confirm: finish match':'Finish match'}</button></div>`;
   else ctrl=`<div class="ctrl"><button class="btn ${c.running?'run-on':'run-off'}" data-act="run" ${c.period==='HT'||c.period==='ETH'?'disabled':''}>${runLbl}</button><button class="btn${A('next')}" data-act="next">${nextLbl}</button></div>
@@ -55,24 +52,22 @@ function vScorer(m){
       <p class="legend">Tap to add or remove. Minutes played are worked out from this and the subs you log.</p>
       <div class="pgrid">${t.players.map(p=>`<button class="pbtn${m.lineup.includes(p.id)?' on':''}" data-act="lineup" data-pid="${p.id}"><b>${p.num}</b><span>${esc(p.name)}</span></button>`).join('')}</div>
       <label class="row muted" style="font-size:13px">Halves of <input type="number" min="1" max="45" value="${m.half}" data-chg="mhalf" style="width:60px" id="m-half"> min</label></section>`:'';
-  return `<section class="board">${boardHTML(m,t)}<div id="alertbar" class="alertbar" hidden></div>${ctrl}</section>
+  const col=(side)=>{const sc=score(m,side),name=side==='us'?S.club:m.opp;
+    const B=(type,label,cls)=>`<button class="key ${cls||''} k-${type}" data-act="tap" data-side="${side}" data-type="${type}">${label}</button>`;
+    return `<div class="scol ${side}"><div class="shead"><span class="cslot">${crestImg(name,'mid')}</span><span class="sname">${esc(name)}</span><span class="sscore">${fmtS(sc)} <small>(${sc.t})</small></span></div>
+      <div class="sgrid">${B('goal','Goal','score')}${B('point','Point','score')}${two?B('two','2-Point','score'):''}${B('wide','Wide','miss')}${B('free','Free','set')}${B('card','Card','cardk')}
+      ${B('kow','KO won','ko')}${B('kol','KO lost','ko')}${B('tow','TO won','to')}${B('tol','TO lost','to')}</div></div>`};
+  return `<section class="board clockbar"><div class="cl"><span class="halfpill ${c.period===1||c.period===3?'h1':c.period===2||c.period===4?'':'ht0'}">${esc(OG.perShort(c.period))}</span><div id="clk" class="clock${c.running?'':' paused'}">${clockHTML(m)}</div><div id="over" class="over"></div></div>
+    <div id="alertbar" class="alertbar" hidden></div>${ctrl}</section>
   ${pre}
   ${sbPanel(m,t)}
+  ${gg?`<section class="panel"><p class="ggnote dark">Go Games: no scores are kept. Track subs (for minutes) and notes only.</p></section>`:`<section class="scorepanel">${col('us')}${col('them')}</section>
+  <p class="legend center">Each tap logs at once with the match time. For ${esc(S.club)} the player picker opens after; skip it if unsure. KO = ${ko}, TO = turnover.</p>`}
   ${lastBar(m,t)}
-  ${gg?`<section class="panel pad us"><div class="keys big gg">${K('sub','Sub','sub')}${K('note','Note','note')}</div></section>`:`
-  <section class="panel pad us">
-    <div class="keys big">${K('shot','Goal','score','data-type="goal"')}${K('shot','Point','score','data-type="point"')}${two?K('shot','2-Pt','score','data-type="two"'):''}${K('shot','Miss','miss','data-type="miss"')}</div>
-    <div class="keys">${q('fwon','Free won')}${q('fcon','Free given')}${q('w45',set45(m.code)+' won')}${K('t45',set45(m.code)+' taken','set')}</div>
-    <div class="kgroups"><div class="kgroup"><span>Our ${ko}s</span><div class="keys two">${q('kow','Won')}${q('kol','Lost')}</div></div><div class="kgroup"><span>Their ${ko}s</span><div class="keys two">${q('okw','Won')}${q('okl','Lost')}</div></div></div>
-    <div class="keys">${q('tow','Turnover won')}${q('tol','Turnover lost')}${q('save','Save')}</div>
-    <div class="keys">${K('sub','Sub','sub')}${K('card','Card','cardk','data-side="us"')}${K('note','Note','note')}</div>
-  </section>
-  <section class="panel pad them"><div class="ph"><h3>${esc(m.opp)}</h3></div>
-    <div class="keys">${K('them','Goal','score','data-type="goal"')}${K('them','Point','score','data-type="point"')}${two?K('them','2-pointer','score','data-type="two"'):''}${K('them','Wide','','data-type="wide"')}${K('card','Card','cardk','data-side="them"')}</div>
-  </section>`}
-  <section class="panel"><div class="ph"><h3>Timeline</h3><span class="legend">Tap an event to change it</span></div>${timeline(m,t,12,true)}</section>
+  <div class="keys two subnote"><button class="key sub" data-act="sub">Sub</button><button class="key note" data-act="note">Note</button></div>
+  <section class="panel"><div class="ph"><h3>Timeline</h3><span class="legend">Tap an event to edit or undo it</span></div>${timeline(m,t,15,true)}</section>
   <section class="panel"><div class="ph"><h3>Scorer</h3><span class="chip w">${esc(me().name)}</span></div>
-    <p class="legend">Only you can score this match. Everyone else sees it live but can't change it. Scoring keeps working with no signal.</p>
+    <p class="legend">Only you can score this match${(fixture(m.fixtureId)||{}).pin?' (match PIN '+esc(fixture(m.fixtureId).pin)+', expires at full time)':''}. Everyone else sees it live but can't change it. Scoring keeps working with no signal.</p>
     <div class="row"><button class="btn" data-act="handover">Hand over scoring</button><button class="btn" data-act="closeMatch">Back to list</button></div></section>`;
 }
 function timeline(m,t,limit,editable){
@@ -86,7 +81,7 @@ function timeline(m,t,limit,editable){
     const pts=isScore(e.type)?` <b class="num">+${OG.PTS[e.type]}</b>`:'';
     const body=e.type==='note'?`<b>Note</b><br><span class="notetxt">${esc(e.text)}</span>`:`<b>${esc(lbl(e.type,m.code))}</b>${pts}${extra}<br><span>${who}</span>`;
     const tag=editable?'button':'div';
-    return `<${tag} class="ev ${e.side}${isScore(e.type)&&e.side==='us'?' sc':''}${e.type==='note'?' nt':''}"${editable?` data-act="editEv" data-id="${e.id}"`:''}><div class="t">${halfTag(e.per)}<b>${isPlaying(e.per)?OG.minOf(e.sec,OG.halfOf(m,e.per)):''}</b></div><div class="what">${body}</div></${tag}>`}).join('')}</div>`;
+    return `<${tag} class="ev ${e.side} t-${e.type}${isScore(e.type)&&e.side==='us'?' sc':''}${e.type==='note'?' nt':''}"${editable?` data-act="editEv" data-id="${e.id}"`:''}><div class="t">${halfTag(e.per)}<b>${isPlaying(e.per)?OG.minOf(e.sec,OG.halfOf(m,e.per)):''}</b></div><div class="what">${body}</div></${tag}>`}).join('')}</div>`;
 }
 
 /* ========== match centre (view-only live, or after full time) ========== */
@@ -125,6 +120,36 @@ function vMatchCentre(m){
   ${manage?`<section class="panel"><h3>Audit trail</h3><div class="audit">${(m.audit||[]).slice().reverse().map(a=>`<div><span class="muted">${new Date(a.at).toLocaleString('en-IE',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}</span> <b>${esc(a.who)}</b> ${esc(a.action)}</div>`).join('')||'<p class="empty">No changes recorded.</p>'}</div></section>`:''}`;
 }
 
+/* ========== live scores (view-only, every role) ========== */
+function vLive(){
+  const now=Date.now();const pub=demoPublic(S,now);ui.livePub=pub.matches;
+  const card=lm=>{const m=S.matches.find(x=>x.id===lm.id)||(lm.example?dmExampleLive(S,now):null);const t=team(m?m.teamId:'')||{};const gg=lm.tier==='gogames';const c=lm.clock;
+    const us=m&&OG.summary(m,'us'),th=m&&OG.summary(m,'them');const ko=KO(lm.code),black=lm.code==='football';
+    const row=(a,l,b)=>`<div class="l">${a}</div><div class="m">${l}</div><div class="r">${b}</div>`;
+    return `<article class="lcard">
+      <div class="lhead"><span>${esc(lm.squad)}</span>${lm.example?'<span class="chip">Example</span>':''}<span class="chip live">Live</span></div>
+      <div class="lsb">
+        <div class="lteam">${crestImg(S.club,'mid')}<b>${esc(S.club)}</b>${gg?'':`<span class="lsc">${fmtS(lm.score.us)}</span><span class="ltot">(${lm.score.us.t})</span>`}</div>
+        <div class="lmid"><span class="halfpill ${c.period===1||c.period===3?'h1':c.period===2||c.period===4?'':'ht0'}">${esc(OG.perShort(c.period))}</span><span class="lclk" data-lclk="${esc(lm.id)}">${isPlaying(c.period)?OG.minOf(c.elapsed,c.period<=2?lm.half:lm.etHalf||10):'–'}</span><span class="ladd" data-ladd="${esc(lm.id)}"></span></div>
+        <div class="lteam">${crestImg(lm.opp,'mid')}<b>${esc(lm.opp)}</b>${gg?'':`<span class="lsc them">${fmtS(lm.score.them)}</span><span class="ltot">(${lm.score.them.t})</span>`}</div>
+      </div>
+      ${gg?'<p class="legend" style="text-align:center">Go Games: no scores are kept.</p>':`<div class="cmp">
+        ${row(us.scores+'/'+us.shots,'Scores from shots',th.scores+'/'+th.shots)}
+        ${row(us.wide,'Wides',th.wide)}
+        ${row(us.y+(black?'/'+us.b:'')+'/'+us.r,'Cards Y/'+(black?'B/':'')+'R',th.y+(black?'/'+th.b:'')+'/'+th.r)}
+      </div>
+      <div class="lours"><span>Their ${ko}s won <b>${us.okw}</b></span><span>Turnovers <b>${us.tow}–${us.tol}</b></span><span>Our ${ko}s <b>${us.kow}/${us.kow+us.kol}</b></span></div>`}
+      ${lm.sinbins&&lm.sinbins.length?`<p class="legend">Sin-bin: ${lm.sinbins.map(s=>esc((s.who||S.club)+' '+mmss(s.left))).join(', ')}</p>`:''}
+      ${!lm.example&&canManage(t.id)?`<div class="row"><button class="btn sm" data-act="openMatch" data-id="${esc(lm.id)}">Open match</button></div>`:''}
+    </article>`};
+  const latest=S.fixtures.filter(f=>f.status==='played'&&f.result).sort((a,b)=>b.date.localeCompare(a.date)).slice(0,4);
+  return `<section class="panel"><div class="ph"><h2>Live scores</h2><button class="btn sm" data-act="tab" data-v="live">Refresh</button></div>
+    ${pub.example?'<p class="legend">No match is being scored right now, so this shows an example. Start a match from the Match tab and it appears here.</p>':''}</section>
+    ${pub.matches.map(card).join('')}
+    <section class="panel"><h3>Latest results</h3>${latest.map(f=>{const t=team(f.teamId);const u=f.result.us,th=f.result.them;const k=u.t>th.t?'w':u.t<th.t?'l':'d';
+      return `<div class="lres">${crestImg(f.opp)}<span class="lrt"><b>${esc(t.name)} v ${esc(f.opp)}</b><span class="muted">${new Date(f.date+'T12:00').toLocaleDateString('en-IE',{day:'numeric',month:'short'})}</span></span><span class="res">${fmtS(u)} – ${fmtS(th)}</span><span class="chip ${k}">${k==='w'?'W':k==='l'?'L':'D'}</span></div>`}).join('')||'<p class="empty">No results yet.</p>'}</section>`;
+}
+
 /* ========== match list ========== */
 function vMatch(){
   const m=active();
@@ -159,7 +184,7 @@ function fxCard(f,compact){
   return `<div class="fx${f.status==='cancelled'?' cancelled':''}"><div class="dt"><span>${d.toLocaleDateString('en-IE',{weekday:'short'})}</span><b>${d.getDate()}</b><span>${d.toLocaleDateString('en-IE',{month:'short'})}</span></div>
     <div class="body"><div class="opp">${crestImg(f.opp)}<span>${esc(t?t.name:'?')} v ${esc(f.opp)}</span></div>
     <div class="row">${f.time?`<span class="chip num">${esc(f.time)}</span>`:''}<span class="chip">${esc(f.venue||'')}</span>${f.comp?`<span class="chip">${esc(f.comp)}</span>`:''}${gg?'<span class="chip">Go Games</span>':''}${f.status==='live'?'<span class="chip live">Live</span>':''}${f.status==='cancelled'?'<span class="chip l">Cancelled</span>':''}${moved}${f.source?`<span class="chip src">${esc(f.source)}</span>`:''}${f.example?'<span class="chip">Example</span>':''}</div>
-    <p class="legend">${mapLink(f)}${f.ref?' · Ref: '+esc(f.ref):''}${f.scorer?' · Scorer: '+esc(userName(f.scorer)):''}${t&&t.tableUrl&&!gg?` · <a href="${esc(t.tableUrl)}" target="_blank" rel="noopener">League table ↗</a>`:''}</p>
+    <p class="legend">${mapLink(f)}${f.ref?' · Ref: '+esc(f.ref):''}${f.scorer?' · Scorer: '+esc(userName(f.scorer))+(manage&&f.pin&&!f.pinExpired&&f.status!=='played'?' (PIN '+esc(f.pin)+')':''):''}${t&&t.tableUrl&&!gg?` · <a href="${esc(t.tableUrl)}" target="_blank" rel="noopener">League table ↗</a>`:''}</p>
     ${res?`<div class="row">${res}</div>`:''}
     <div class="row">${btn}${compact||!manage?'':f.status==='cancelled'?`<button class="btn sm" data-act="cancelFx" data-id="${f.id}">Put back on</button>`:`<button class="btn sm" data-act="editFx" data-id="${f.id}">Edit</button>`}</div></div></div>`;
 }
@@ -205,19 +230,28 @@ function vStats(){
     <section class="panel"><h3>Matches</h3>${played.length?played.map(f=>fxCard(f,true)).join(''):'<p class="empty">No matches yet.</p>'}</section>`;
   const P=st.P||1;
   const all=[];for(const m of st.ms)for(const e of m.events)if(e.side==='us'&&SHOTS.includes(e.type))all.push({e,m});
-  const fl=all.filter(x=>(ui.mapSrc==='all'||(x.e.src||'play')===ui.mapSrc)&&(ui.mapPl==='all'||x.e.pid===ui.mapPl));
+  // shot map filters: source, player, outcome (goal / point / 2-pointer / miss)
+  const outOf=e=>e.type==='goal'?'goal':e.type==='point'?'point':e.type==='two'?'two':'miss';
+  const OUTS=[['goal','Goals','g'],['point','Points','s']].concat(two?[['two','2-pointers','two']]:[]).concat([['miss','Misses','m']]);
+  ui.mapOut=ui.mapOut||{goal:true,point:true,two:true,miss:true};
+  const pre=all.filter(x=>(ui.mapSrc==='all'||(x.e.src||'play')===ui.mapSrc)&&(ui.mapPl==='all'||x.e.pid===ui.mapPl));
+  const fl=pre.filter(x=>ui.mapOut[outOf(x.e)]!==false);
   const located=fl.filter(x=>hasLoc(x.e));
-  const bands=BANDS(t.code,two).map((l,i)=>{const r=located.filter(x=>x.e.src!=='45'&&bandOf(x.e,x.m.code)===i);return{l,a:r.length,s:r.filter(x=>isScore(x.e.type)).length}});
-  const sides=['Left','Centre','Right'].map(l=>{const r=located.filter(x=>x.e.src!=='45'&&sideOf(x.e)===l);return{l,a:r.length,s:r.filter(x=>isScore(x.e.type)).length}});
+  const tallyOut=r=>{const o={goal:0,point:0,two:0,miss:0};r.forEach(x=>o[outOf(x.e)]++);return Object.assign(o,{a:r.length,s:r.length-o.miss})};
+  const bands=BANDS(t.code,two).map((l,i)=>Object.assign({l},tallyOut(located.filter(x=>bandOf(x.e,x.m.code)===i))));
+  const sides=['Left','Centre','Right'].map(l=>Object.assign({l},tallyOut(located.filter(x=>sideOf(x.e)===l))));
+  const stackRow=(b,max)=>`<div class="bar"><span class="lab">${b.l}</span><span class="trk stack">${b.a?['goal','point','two','miss'].filter(k=>b[k]).map(k=>`<i class="o-${k}" style="width:${b[k]*100/max}%" title="${b[k]} ${k==='two'?'2-pointer':k}${b[k]===1?'':'s'}"></i>`).join(''):''}</span><span class="v">${b.a?(bothOn()?`${b.s}/${b.a} <span class="pc">${pct(b.s,b.a)}</span>`:`${b.a}`):'–'}</span></div>`;
+  function bothOn(){return ui.mapOut.miss!==false&&(ui.mapOut.goal!==false||ui.mapOut.point!==false||ui.mapOut.two!==false)}
+  const mapCount=o=>pre.filter(x=>hasLoc(x.e)&&outOf(x.e)===o).length;
   const srcs=Object.keys(SRC).filter(k=>F||k!=='mark').map(k=>{const r=all.filter(x=>(x.e.src||'play')===k);return{l:srcL(k,t.code),a:r.length,s:r.filter(x=>isScore(x.e.type)).length}}).filter(r=>r.a);
-  const maxB=Math.max(1,...bands.map(b=>b.a),...sides.map(b=>b.a));
+  const maxB=Math.max(1,...bands.map(b=>b.a)),maxS=Math.max(1,...sides.map(b=>b.a));
   const f45=all.filter(x=>x.e.src==='45');
   const s45sides=['Left','Centre','Right'].map(l=>{const r=f45.filter(x=>hasLoc(x.e)&&sideOf(x.e)===l);return{l,a:r.length,s:r.filter(x=>isScore(x.e.type)).length}});
   const takers={};f45.forEach(x=>{const k=x.e.pid||'';(takers[k]=takers[k]||{a:0,s:0}).a++;if(isScore(x.e.type))takers[k].s++});
   const scorersRows=st.rows.filter(r=>r.ptsTotal).sort((a,b)=>b.ptsTotal-a.ptsTotal||b.goal-a.goal);
   const topMax=Math.max(1,...scorersRows.map(r=>r.ptsTotal));
   const sc=r=>`${r.goal}-${pad(r.point+2*r.two)}`;
-  const cols=[['G','goal'],['P','point']].concat(two?[['2P','two'],['2P att','twoAtt']]:[]).concat([['Fr','free'],[s45+'s','t45x'],['Wd','wide'],['TOW','tow'],['TOL','tol'],['FW','fwon'],['FG','fcon'],['Sv','save'],['Y','yellow']]).concat(hasBlack(t.code)?[['B','black']]:[]).concat([['R','red']]);
+  const cols=[['G','goal'],['P','point']].concat(two?[['2P','two'],['2P att','twoAtt']]:[]).concat([['Fr','free'],[s45+'s','t45x'],['Wd','wide'],['TOW','tow'],['TOL','tol'],['Y','yellow']]).concat(hasBlack(t.code)?[['B','black']]:[]).concat([['R','red']]);
   const cell=(r,k)=>k==='t45x'?(r.t45?r.s45+'/'+r.t45:''):(r[k]||'');
   const form=st.games.slice(-5);
   return head+`<div class="kpis">
@@ -233,12 +267,15 @@ function vStats(){
     <section class="panel"><h3>Scores for and against</h3>${formChart(st.games)}</section>
   </div>
   ${minutesPanel}
-  <section class="panel"><div class="ph"><h3>Shot map</h3><span class="legend">${located.length} of ${fl.length} shots have a location</span></div>
+  <section class="panel"><div class="ph"><h3>Shot map</h3><span class="legend">${located.length} shot${located.length===1?'':'s'} on the map${fl.length>located.length?` (${fl.length-located.length} logged without a location)`:''}</span></div>
+    <div class="seg outf">${OUTS.map(([k,l,c])=>`<button data-act="mapOut" data-v="${k}" aria-pressed="${ui.mapOut[k]!==false}"><i class="dotk ${c}"></i>${l} <b>${mapCount(k)}</b></button>`).join('')}</div>
     <div class="row"><div class="seg">${[['all','All'],['play','From play'],['free','Frees'],['45',s45+'s'],['pen','Penalties']].map(([k,l])=>`<button data-act="mapSrc" data-v="${k}" aria-pressed="${ui.mapSrc===k}">${l}</button>`).join('')}</div>
     <select id="map-pl" data-chg="mapPl" aria-label="Player"><option value="all">All players</option>${t.players.map(p=>`<option value="${p.id}" ${ui.mapPl===p.id?'selected':''}>#${p.num} ${esc(p.name)}</option>`).join('')}</select></div>
-    <div class="grid2"><div><div class="pitchbox">${pitchSVG({code:t.code,arc:two,dots:shotDots(fl,t)})}</div>${pkey(two)}</div>
-    <div class="bars"><h3>By distance</h3>${bands.map(b=>barRow(b.l,b.a,maxB,b.a?`${b.s}/${b.a} <span class="pc">${pct(b.s,b.a)}</span>`:'–','a')).join('')}
-      <h3 style="margin-top:6px">By side</h3>${sides.map(b=>barRow(b.l,b.a,maxB,b.a?`${b.s}/${b.a} <span class="pc">${pct(b.s,b.a)}</span>`:'–')).join('')}</div></div>
+    <div class="grid2"><div><div class="pitchbox">${pitchSVG({code:t.code,arc:two,dots:shotDots(fl,t)})}</div></div>
+    <div class="bars"><div class="ph"><h3>By distance from goal</h3><span class="legend">${bothOn()?'scored / shots':'shots'}</span></div>${bands.map(b=>stackRow(b,maxB)).join('')}
+      <h3 style="margin-top:6px">By side of the pitch</h3>${sides.map(b=>stackRow(b,maxS)).join('')}
+      <div class="bar total"><span class="lab">Total</span><span></span><span class="v">${(()=>{const sc=located.length-located.filter(x=>outOf(x.e)==='miss').length;return bothOn()?`${sc}/${located.length} <span class="pc">${pct(sc,located.length)}</span>`:`${located.length}`})()}</span></div>
+      <p class="legend">Each bar is the shots from that area, split by result in the map's colours. Each group adds up to the dots on the map, and follows the filters above.</p></div></div>
   </section>
   <div class="grid2">
     <section class="panel"><h3>Shooting by source</h3>
@@ -248,18 +285,18 @@ function vStats(){
       </tbody></table></div>
       <p class="legend">Wides ${T.wide} · Dropped short ${T.short} · Saved or blocked ${T.saved}</p></section>
     <section class="panel"><h3>${s45}s</h3>
-      <div class="kpis"><div class="kpi am"><b>${f45.filter(x=>isScore(x.e.type)).length}/${f45.length}</b><span>${s45}s scored (${pct(f45.filter(x=>isScore(x.e.type)).length,f45.length)})</span></div><div class="kpi"><b>${T.w45}</b><span>${s45}s won</span></div></div>
+      <div class="kpis"><div class="kpi am"><b>${f45.filter(x=>isScore(x.e.type)).length}/${f45.length}</b><span>${s45}s scored (${pct(f45.filter(x=>isScore(x.e.type)).length,f45.length)})</span></div></div>
       <div class="bars">${s45sides.map(b=>barRow(b.l+' side',b.a,Math.max(1,...s45sides.map(x=>x.a)),b.a?`${b.s}/${b.a}`:'–','a')).join('')}</div>
       <p class="legend">${Object.keys(takers).length?'Takers: '+Object.entries(takers).map(([pid,v])=>esc(pid?(pName(t,pid)||'?'):'Not recorded')+' '+v.s+'/'+v.a).join(' · '):'No '+s45+'s taken yet.'}</p></section>
   </div>
-  <section class="panel"><h3>Restarts, turnovers &amp; frees</h3>
-    ${splitBar('Our '+ko+'s','Won',T.kow,'Lost',T.kol)}${splitBar('Their '+ko+'s','We won',T.okw,'They kept',T.okl)}${splitBar('Turnovers','Won',T.tow,'Lost',T.tol)}${splitBar('Frees','Won',T.fwon,'Given',T.fcon)}
+  <section class="panel"><h3>Kick-outs &amp; turnovers</h3>
+    ${splitBar('Our '+ko+'s','Won',T.kow,'Lost',T.kol)}${splitBar('Their '+ko+'s','We won',T.okw,'They kept',T.okl)}${splitBar('Turnovers','Won',T.tow,'Lost',T.tol)}
     <p class="legend">Our ${ko} retention ${pct(T.kow,T.kow+T.kol)}; we won ${pct(T.okw,T.okw+T.okl)} of theirs. ${(T.tow/P).toFixed(1)} turnovers won a match.</p></section>
   <section class="panel"><h3>Player stats</h3>
     <div class="tw"><table><thead><tr><th>Player</th><th>Apps</th><th>Mins</th><th>Score</th><th>Shots</th>${cols.map(c=>`<th>${c[0]}</th>`).join('')}</tr></thead><tbody>
       ${st.rows.filter(r=>r.apps).sort((a,b)=>b.ptsTotal-a.ptsTotal||b.mins-a.mins).map(r=>`<tr><td>#${r.p.num} ${esc(r.p.name)}</td><td>${r.apps}</td><td>${Math.round(r.mins/60)}</td><td><b>${sc(r)}</b> (${r.ptsTotal})</td><td>${scores(r)}/${shots(r)}<span class="pc">${pct(scores(r),shots(r))}</span></td>${cols.map(c=>`<td>${cell(r,c[1])}</td>`).join('')}</tr>`).join('')}
     </tbody></table></div>
-    <p class="legend">Fr = scores from frees. ${s45}s = scored/taken. TOW/TOL = turnovers won/lost. FW/FG = frees won/given. Sv = saves.</p></section>
+    <p class="legend">Fr = scores from frees. ${s45}s = scored/taken. TOW/TOL = turnovers won/lost.</p></section>
   <section class="panel"><h3>Results</h3>${played.length?played.map(f=>fxCard(f,true)).join(''):'<p class="empty">No results yet.</p>'}</section>`;
 }
 
@@ -303,11 +340,11 @@ function vAdmin(){
     <p class="legend">Minutes run on playing time: when the scorer stops the clock for a stoppage, minutes stop too. Added time counts.</p></section>`;
   if(ui.adminTab==='people'){
     const coaches=S.users.filter(u=>u.role==='coach'),scorers=S.users.filter(u=>u.role==='scorer');
-    return nav+`<section class="panel"><h3>Coaches</h3>${coaches.map(u=>`<div class="prow3"><b>${esc(u.name)}</b><span class="muted">${esc((team(u.teamId)||{}).name||'')}</span></div>`).join('')}
-      <p class="legend">Coaches see full stats, minutes and notes for their own team only.</p></section>
+    return nav+`<section class="panel"><h3>Coaches</h3>${coaches.map(u=>`<div class="prow3 wrap"><b>${esc(u.name)}</b><span class="muted">${esc((team(u.teamId)||{}).name||'')}</span><input id="uc-${u.id}" value="${esc(u.contact||'')}" placeholder="Email or mobile" aria-label="Email or mobile for ${esc(u.name)}"><button class="btn sm" data-act="sendLink" data-id="${u.id}">Send sign-in link</button></div>`).join('')}
+      <p class="legend">Coaches sign in with a one-tap link by email or text: no passwords. They see full stats, minutes and notes for their own team only. Admins (PRO/committee) have their own login.</p></section>
     <section class="panel"><h3>Scorers</h3>${scorers.map(u=>`<div class="prow3"><b>${esc(u.name)}</b><span class="muted">${S.fixtures.filter(f=>f.scorer===u.id&&f.status!=='played').length} upcoming</span><button class="btn sm${A('du'+u.id)}" data-act="delUser" data-id="${u.id}">${ui.armed==='du'+u.id?'Remove?':'✕'}</button></div>`).join('')}
       <div class="row"><input id="nu-name" placeholder="Name (e.g. a parent)" style="flex:1 1 160px"><button class="btn" data-act="addUser">Add scorer</button></div>
-      <p class="legend">Scorers only see the scoring screen for matches assigned to them. Assign them on a fixture (Fixtures → Edit).</p></section>`;
+      <p class="legend">Scorers don't need an account. Assign them on a fixture (Fixtures → Edit) and they get a PIN for that match only; it expires at full time.</p></section>`;
   }
   if(!ui.adminTeam||!team(ui.adminTeam))ui.adminTeam=S.teams[0]&&S.teams[0].id;const t=team(ui.adminTeam);const a=t&&assocOf(t);
   const def=t&&OG.sinbinRule(Object.assign({},t,{sinbinCard:''}));
@@ -342,14 +379,14 @@ function vAdmin(){
 /* ========== render + boot ========== */
 function render(){
   const u=me();
-  const tabs=isScorer()?[['match','Matches']]:[['match','Match'],['fixtures','Fixtures'],['stats','Stats']].concat(isAdmin()?[['club','Club'],['admin','Admin']]:[]);
+  const tabs=(isScorer()?[['live','Live'],['match','Matches']]:[['live','Live'],['match','Match'],['fixtures','Fixtures'],['stats','Stats']]).concat(isAdmin()?[['club','Club'],['admin','Admin']]:[]);
   if(!tabs.some(x=>x[0]===S.tab))S.tab=tabs[0][0];
   const nav=document.getElementById('nav');nav.innerHTML=tabs.map(([v,l])=>`<button data-act="tab" data-v="${v}" aria-current="${S.tab===v?'page':'false'}">${l}</button>`).join('');nav.hidden=false;
   document.getElementById('clubname').textContent=S.club;
   document.getElementById('badge').innerHTML=badgeHTML();
   const sel=document.getElementById('who');
   sel.innerHTML=S.users.map(x=>`<option value="${x.id}" ${x.id===u.id?'selected':''}>${esc(x.label)}</option>`).join('');
-  document.getElementById('app').innerHTML=S.tab==='fixtures'?vFixtures():S.tab==='stats'?vStats():S.tab==='club'?vClub():S.tab==='admin'?vAdmin():vMatch();
+  document.getElementById('app').innerHTML=S.tab==='live'?vLive():S.tab==='fixtures'?vFixtures():S.tab==='stats'?vStats():S.tab==='club'?vClub():S.tab==='admin'?vAdmin():vMatch();
   tick();
 }
 (function boot(){
@@ -358,5 +395,6 @@ function render(){
   render();
   const m=active();if(m&&m.clock.running&&canScore(m))keepAwake(true);
   document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'){const m=active();if(m&&m.clock.running&&canScore(m)){wake=null;keepAwake(true)}}});
+  setInterval(()=>{if(S.tab==='live'&&document.visibilityState==='visible'&&document.getElementById('sheet').hidden){const keep={me:S.me,tab:S.tab};try{const f=JSON.parse(localStorage.getItem(DEMO_KEY)||'null');if(f&&f.v===S.v)S=Object.assign(f,keep)}catch(e){}render()}},5000);
   try{if('serviceWorker' in navigator&&location.protocol==='https:'&&window.top===window.self)navigator.serviceWorker.register('sw.js').catch(()=>{})}catch(e){}
 })();

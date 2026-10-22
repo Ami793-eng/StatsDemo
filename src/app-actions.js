@@ -10,7 +10,14 @@ const elapsed=m=>OG.elapsed(m);
 const isPlaying=p=>typeof p==='number'&&p>0;
 function clockHTML(m){const c=m.clock;if(!isPlaying(c.period))return c.period===0?'0:00':OG.perShort(c.period).replace('Half time','HT').replace('Full time','FT').replace('ET half time','ET HT').replace('After ET','AET');
   const e=elapsed(m);return `${OG.minOf(e,OG.halfOf(m,c.period))}<span class="sec">${pad(Math.floor(e)%60)}s</span>`}
+function liveTick(){ // clocks on the Live tab
+  if(!ui.livePub)return;
+  for(const lm of ui.livePub){const c=lm.clock;if(!isPlaying(c.period))continue;const el=document.querySelector(`[data-lclk="${lm.id}"]`);if(!el)continue;
+    const e=c.running?c.elapsed+(Date.now()-lm.savedAt)/1000:c.elapsed,h=c.period<=2?lm.half:(lm.etHalf||10);el.textContent=OG.minOf(e,h);
+    const a=document.querySelector(`[data-ladd="${lm.id}"]`);if(a)a.textContent=e>h*60?'+'+mmss(e-h*60)+' added':mmss(e)}
+}
 function tick(){
+  if(S&&S.tab==='live'){liveTick();return}
   if(!S)return;const m=active();if(!m||S.tab!=='match')return;
   const el=document.getElementById('clk');if(el){el.innerHTML=clockHTML(m);el.classList.toggle('paused',!m.clock.running)}
   const c=m.clock,e=elapsed(m),lim=OG.halfOf(m,c.period)*60;
@@ -56,7 +63,7 @@ function startMatch(fx){
   S.matches.push(m);fx.matchId=m.id;fx.scorer=S.me;audit(m,'Started scoring');S.active=m.id;S.tab='match';persist();render();
 }
 function endPeriod(m){const c=m.clock;c.durs[c.period]=elapsed(m);c.running=false;c.acc=0}
-function finishMatch(m){m.ended=true;m.clock.running=false;keepAwake(false);syncResult(m);audit(m,'Finished match');persist();render();toast('Full time. Result saved.')}
+function finishMatch(m){const ff=fixture(m.fixtureId);if(ff&&ff.pin){ff.pinExpired=true;ff.pinOk=[]}m.ended=true;m.clock.running=false;keepAwake(false);syncResult(m);audit(m,'Finished match');persist();render();toast('Full time. Result saved.')}
 
 /* ========== actions ========== */
 const acts={
@@ -86,21 +93,21 @@ const acts={
   bloodret:d=>{const m=active();if(!canScore(m))return;const s=m.events.find(e=>e.id===d.id);if(!s)return;addEvent({side:'us',type:'bloodret',pid:s.onId,onId:s.pid,ref:s.id})},
   note:()=>{const m=active();if(!m||(!canScore(m)&&!canManage(m.teamId)))return;openNote(m)},
   undo:()=>{const m=active();if(!canScore(m)||!m.events.length)return;const e=m.events.pop();audit(m,'Undid '+describe(m,e));syncResult(m);persist();render();toast('Undone: '+lbl(e.type,m.code))},
-  addPlayer:d=>{const m=active();const e=m&&m.events.find(x=>x.id===d.id);if(!e)return;openEdit(m,e,true)},
   editEv:d=>{const m=active();const e=m&&m.events.find(x=>x.id===d.id);if(!e)return;openEdit(m,e,false)},
   handover:()=>{const m=active();if(!m)return;openHandover(m)},
   takeover:()=>{const m=active();if(!m||!canManage(m.teamId))return;if(!armed('takeover'))return;const was=userName(m.scorer);m.scorer=S.me;const f=fixture(m.fixtureId);if(f)f.scorer=S.me;audit(m,`Took over scoring from ${was}`);persist();render();toast('You are now scoring this match')},
   closeMatch:()=>{S.active=null;keepAwake(false);persist();render()},
   startFx:d=>{const f=fixture(d.id);if(!f)return;
+    if(isScorer()&&f.status!=='played'&&f.pin&&!(f.pinOk||[]).includes(S.me)){openPin(f);return}
     if(f.matchId&&S.matches.find(m=>m.id===f.matchId)){S.active=f.matchId;S.tab='match';persist();render();window.scrollTo(0,0);return}
     if(f.scorer&&f.scorer!==S.me){if(!canManage(f.teamId)){toast('This match is assigned to '+userName(f.scorer));return}
       if(!armed('start'+f.id)){toast('Assigned to '+userName(f.scorer)+'. Tap again to score it yourself.');return}}
     startMatch(f)},
-  openMatch:d=>{S.active=d.id;S.tab='match';persist();render();window.scrollTo(0,0)},
+  openMatch:d=>{const mm=S.matches.find(x=>x.id===d.id);const ff=mm&&fixture(mm.fixtureId);if(isScorer()&&ff&&!mm.ended&&ff.pin&&!(ff.pinOk||[]).includes(S.me)){openPin(ff,d.id);return}S.active=d.id;S.tab='match';persist();render();window.scrollTo(0,0)},
   month:d=>{const [y,mo]=ui.month.split('-').map(Number);const dt=new Date(y,mo-1+Number(d.v),1);ui.month=dt.getFullYear()+'-'+pad(dt.getMonth()+1);ui.day=null;render()},
   day:d=>{ui.day=ui.day===d.v?null:d.v;render()},
   teamF:d=>{ui.teamF=d.v;render()},
-  addFx:()=>{const g=id=>document.getElementById(id).value.trim();const f={id:uid(),teamId:g('f-team'),date:g('f-date'),time:g('f-time'),opp:g('f-opp'),venue:g('f-venue'),ground:g('f-ground'),comp:g('f-comp'),ref:g('f-ref'),scorer:g('f-scorer')||null,status:'upcoming',createdAt:Date.now()};
+  addFx:()=>{const g=id=>document.getElementById(id).value.trim();const f={id:uid(),teamId:g('f-team'),date:g('f-date'),time:g('f-time'),opp:g('f-opp'),venue:g('f-venue'),ground:g('f-ground'),comp:g('f-comp'),ref:g('f-ref'),scorer:g('f-scorer')||null,status:'upcoming',createdAt:Date.now()};if(f.scorer)f.pin=String(1000+Math.floor(Math.random()*9000));
     if(!f.teamId){toast('No squad to add fixtures for');return}if(!f.date||!f.opp){toast('Fixtures need a date and an opposition');return}
     if(!f.ground&&f.venue==='Home')f.ground=HOME_GROUND;S.fixtures.push(f);ui.month=f.date.slice(0,7);ui.day=f.date;persist();render();toast('Fixture added')},
   editFx:d=>{ui.editFx=ui.editFx===d.id?null:d.id;render()},
@@ -108,7 +115,8 @@ const acts={
     const nd={date:g('date'),time:g('time'),venue:g('venue')};if(!nd.date){toast('A fixture needs a date');return}
     const moved=nd.date!==f.date||nd.time!==(f.time||'')||nd.venue!==(f.venue||'');
     if(moved&&f.status==='upcoming'){if(!f.prev)f.prev={date:f.date,time:f.time||'',venue:f.venue||''};f.changedAt=Date.now()}
-    Object.assign(f,nd,{opp:g('opp')||f.opp,comp:g('comp'),ground:g('ground'),ref:g('ref'),scorer:g('scorer')||null});
+    const ns=g('scorer')||null;if(ns!==f.scorer){f.pin=ns?String(1000+Math.floor(Math.random()*9000)):null;f.pinOk=[]}
+    Object.assign(f,nd,{opp:g('opp')||f.opp,comp:g('comp'),ground:g('ground'),ref:g('ref'),scorer:ns});
     if(f.prev&&f.prev.date===f.date&&f.prev.time===f.time&&f.prev.venue===f.venue)delete f.prev;
     ui.editFx=null;persist();render();toast(moved?'Fixture moved. Parents will see the change.':'Fixture saved')},
   cancelFx:d=>{const f=fixture(d.id);if(!f)return;
@@ -117,6 +125,7 @@ const acts={
   delFx:d=>{if(!armed('dfx'+d.id))return;const f=fixture(d.id);S.fixtures=S.fixtures.filter(x=>x!==f);if(f&&f.matchId){S.matches=S.matches.filter(m=>m.id!==f.matchId);if(S.active===f.matchId)S.active=null}ui.editFx=null;persist();render()},
   statsTeam:d=>{ui.statsTeam=d.v;ui.mapPl='all';S.tab='stats';persist();render();window.scrollTo(0,0)},
   mapSrc:d=>{ui.mapSrc=d.v;render()},
+  mapOut:d=>{ui.mapOut=ui.mapOut||{};const on=ui.mapOut[d.v]!==false;const others=['goal','point','two','miss'].filter(k=>k!==d.v&&ui.mapOut[k]!==false);if(on&&!others.length){toast('At least one result has to stay on');return}ui.mapOut[d.v]=!on;render()},
   adminTab:d=>{ui.adminTab=d.v;render()},
   adminTeam:d=>{ui.adminTeam=d.v;render()},
   addTeam:()=>{const t=normTeam({id:uid(),name:'New squad',assoc:'gaa_f',grade:'U14',half:30,players:[]});S.teams.push(t);ui.adminTeam=t.id;ui.adminTab='teams';persist();render()},
@@ -130,14 +139,15 @@ const acts={
       const [fn,first,last,num]=c;const name=[first,last].filter(Boolean).join(' ');const ex=t.players.find(p=>p.foireann===fn);
       if(ex){if(name)ex.name=name;if(num)ex.num=Number(num)||ex.num;updated++}else{t.players.push({id:uid(),num:Number(num)||t.players.reduce((a,p)=>Math.max(a,p.num),0)+1,name,foireann:fn,code:newCode()});added++}}
     t.players.sort((a,b)=>a.num-b.num);persist();render();toast(`${added} added, ${updated} updated`)},
+  sendLink:d=>{const u=S.users.find(x=>x.id===d.id);const c=(document.getElementById('uc-'+d.id)||{}).value||'';if(!c.trim()){toast('Add an email or mobile number first');return}u.contact=c.trim();persist();render();toast('In the full version, '+u.name+' gets a one-tap sign-in link by '+(c.includes('@')?'email':'text')+'. No password.')},
   addUser:()=>{const n=document.getElementById('nu-name').value.trim();if(!n){toast('Type a name');return}S.users.push({id:'u-'+uid(),name:n,role:'scorer',label:n+' · scorer'});persist();render();toast(n+' can now be assigned matches')},
   delUser:d=>{if(!armed('du'+d.id))return;S.users=S.users.filter(u=>u.id!==d.id);persist();render()},
   resetDemo:()=>{if(!armed('reset'))return;const keep=S.me;S=buildDemo();S.me=S.users.some(u=>u.id===keep)?keep:'u-mary';ui.statsTeam=null;ui.adminTeam=null;persist();render();toast('Demo reset to the example season')},
   csvMatch:()=>{const m=active();if(!m)return;const t=team(m.teamId);const rows=[['Half','Minute','Side','Event','Player','Foireann no.','Source','Distance (m)','Note','Logged by']];
     for(const e of [...m.events].sort((a,b)=>OG.abs(m,a.per,a.sec)-OG.abs(m,b.per,b.sec))){const p=player(t,e.pid);rows.push([OG.perShort(e.per),OG.minOf(e.sec,OG.halfOf(m,e.per)),e.side==='us'?S.club:m.opp,lbl(e.type,m.code)+(e.blood?' (blood)':''),e.type==='sub'||e.type==='bloodret'?pName(t,e.pid)+' off, '+pName(t,e.onId)+' on':pName(t,e.pid),p?p.foireann:'',e.src?srcL(e.src,m.code):'',hasLoc(e)?Math.round(distM(e)):'',e.text||'',e.by||''])}
     ui.csv=OG.csv(rows);render();saveFile(`${t.name} v ${m.opp} ${m.date}.csv`.replace(/[\/\\:*?"<>|]/g,'-'),ui.csv,toast)},
-  csvSeason:d=>{const t=team(d.id);const st=teamStats(t.id);const rows=[['No.','Player','Foireann no.','Apps','Starts','Minutes','Goals','Points','2-pointers','Total','Shots','Wides','From frees',set45(t.code)+'s scored','Turnovers won','Turnovers lost','Frees won','Frees conceded','Saves','Yellow','Black','Red']];
-    for(const r of st.rows.sort((a,b)=>a.p.num-b.p.num))rows.push([r.p.num,r.p.name,r.p.foireann||'',r.apps,r.starts,Math.round(r.mins/60),r.goal,r.point,r.two,r.ptsTotal,shots(r),r.wide,r.free,r.s45,r.tow,r.tol,r.fwon,r.fcon,r.save,r.yellow,r.black,r.red]);
+  csvSeason:d=>{const t=team(d.id);const st=teamStats(t.id);const rows=[['No.','Player','Foireann no.','Apps','Starts','Minutes','Goals','Points','2-pointers','Total','Shots','Wides','From frees',set45(t.code)+'s scored','Turnovers won','Turnovers lost','Yellow','Black','Red']];
+    for(const r of st.rows.sort((a,b)=>a.p.num-b.p.num))rows.push([r.p.num,r.p.name,r.p.foireann||'',r.apps,r.starts,Math.round(r.mins/60),r.goal,r.point,r.two,r.ptsTotal,shots(r),r.wide,r.free,r.s45,r.tow,r.tol,r.yellow,r.black,r.red]);
     ui.csv=OG.csv(rows);render();saveFile(`${t.name} season stats.csv`,ui.csv,toast)},
   copyCsv:()=>copy(ui.csv,'CSV copied','csvbox'),
   copyReport:d=>{const m=active();copy(OG.report(S,m,d.pub==='1'),'Match report copied')},
@@ -271,4 +281,83 @@ function openShare(canvas,text){
       if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file],text});return}
       if(navigator.share){await navigator.share({text});return}}catch(err){}
     toast('Sharing isn’t available here. Long-press the image to save it.')});
+}
+
+/* ========== brief v2: tap logs instantly, details after ========== */
+const PICK_TYPES=['goal','point','two','wide','short','saved','tow','tol','yellow','black','red'];
+const SHOT_TYPES=['goal','point','two','wide','short','saved'];
+acts.tap=d=>{const m=active();if(!canScore(m))return;const side=d.side,type=d.type;
+  if(type==='free'){openFree(m,side);return}
+  if(type==='card'){openCardQ(m,side);return}
+  const e=addEvent(Object.assign({side,type},SHOT_TYPES.includes(type)?{src:'play'}:{}));
+  if(e&&side==='us'&&PICK_TYPES.includes(type))openAfter(m,e)};
+function openFree(m,side){
+  const t=team(m.teamId);const two=footy(m.code)&&m.arc;let kind='free';
+  const draw=()=>{const res=kind==='45'?[['point',two?'Scored (2 pts)':'Scored'],['wide','Wide'],['short','Dropped short']]:[['goal','Goal'],['point','Point']].concat(two?[['two','2-Point']]:[]).concat([['wide','Wide'],['short','Short']]);
+    sheet(`${sheetHead((side==='us'?S.club:m.opp)+': free')}
+      <div class="seg big">${[['free','Free'],['45',set45(m.code)]].map(([k,l])=>`<button data-kind="${k}" aria-pressed="${kind===k}">${l}</button>`).join('')}</div>
+      <div class="grp"><h3>Result</h3><div class="keys">${res.map(([k,l])=>`<button class="key k-${k}" data-res="${k}">${l}</button>`).join('')}</div></div>`,ev=>{
+      const kd=ev.target.closest('[data-kind]');if(kd){kind=kd.dataset.kind;draw();return}
+      const r=ev.target.closest('[data-res]');if(!r)return;let type=r.dataset.res;if(kind==='45'&&type==='point'&&two)type='two';
+      const o={side,type,src:kind};if(kind==='45'){o.lx=40;o.ly=footy(m.code)?45:65}
+      closeSheet();const e=addEvent(o,kind==='45'?set45(m.code):'Free');if(e&&side==='us')openAfter(m,e)})};
+  draw();
+}
+function openCardQ(m,side){
+  const t=team(m.teamId);const rule=OG.sinbinRule(t);
+  sheet(`${sheetHead((side==='us'?S.club:m.opp)+': card')}
+    <div class="keys cardsq">${['yellow'].concat(hasBlack(m.code)?['black']:[]).concat(['red']).map(k=>`<button class="key c-${k}" data-card="${k}">${k[0].toUpperCase()+k.slice(1)}${rule&&rule.card===k?`<small>sin-bin ${rule.secs/60} min</small>`:''}</button>`).join('')}</div>`,ev=>{
+    const c=ev.target.closest('[data-card]');if(!c)return;const card=c.dataset.card;const o={side,type:card};if(rule&&rule.card===card)o.sinbin=rule.secs;
+    closeSheet();const e=addEvent(o);if(e&&side==='us')openAfter(m,e)});
+}
+// After a tap: who (and for scores, where). Scores need both before the sheet closes.
+function openAfter(m,e){
+  const t=team(m.teamId);const shot=SHOT_TYPES.includes(e.type);const isSc=isScore(e.type);const is45=e.src==='45';
+  const needLoc=isSc&&!is45,needWho=isSc;const onIds=[...OG.onPitch(m)];
+  const draw=()=>{
+    const done=(!needWho||e.pid)&&(!needLoc||hasLoc(e));
+    const where=hasLoc(e)?`${Math.round(distM(e))}m, ${sideOf(e).toLowerCase()}`:'';
+    const head=`<div class="row" style="justify-content:space-between"><h2>${esc(lbl(e.type,m.code))}${e.src&&e.src!=='play'?' · '+esc(srcL(e.src,m.code)):''} <small class="muted">${isPlaying(e.per)?OG.minOf(e.sec,OG.halfOf(m,e.per)):''}</small></h2>
+      <button class="btn sm warn" data-undo="1">Undo</button></div>`;
+    const missChips=['wide','short','saved'].includes(e.type)?`<div class="seg">${[['wide','Wide'],['short','Short'],['saved','Saved / blocked']].map(([k,l])=>`<button data-miss="${k}" aria-pressed="${e.type===k}">${l}</button>`).join('')}</div>`:'';
+    const srcChips=shot&&!is45&&e.src!=='free'?`<div class="seg">${[['play','From play']].concat(footy(m.code)&&e.type!=='goal'?[['mark','Mark']]:[]).concat(e.type==='goal'||e.type==='wide'||e.type==='saved'?[['pen','Penalty']]:[]).map(([k,l])=>`<button data-src="${k}" aria-pressed="${(e.src||'play')===k}">${l}</button>`).join('')}</div>`:'';
+    const sideChips=is45?`<div class="grp"><h3>Where</h3><div class="seg big">${['Left','Centre','Right'].map(k=>`<button data-s45="${k}" aria-pressed="${hasLoc(e)&&sideOf(e)===k}">${k}</button>`).join('')}</div></div>`:'';
+    const pitch=shot&&!is45?`<div class="grp"><h3>Where${needLoc?' <span class="req">required</span>':' (optional)'}${where?' · '+esc(where):''}</h3><div class="pitchbox">${pitchSVG({code:m.code,arc:m.arc,mark:hasLoc(e)?e:null,id:'afterpitch'})}</div>${isSc&&m.arc&&footy(m.code)?'<p class="legend">Outside the arc counts 2 points automatically.</p>':''}</div>`:'';
+    const who=`<div class="grp"><h3>Who${needWho?' <span class="req">required</span>':' (optional)'}</h3>${pgrid(t,onIds,new Set([e.pid]))}</div>`;
+    const foot=done?`<div class="row"><button class="btn pri" data-done="1">Done</button>${needWho?'':'<button class="btn" data-done="1">Skip</button>'}</div>`
+      :`<p class="legend">${needWho&&!e.pid&&needLoc&&!hasLoc(e)?'Tap where on the pitch, then who scored.':needLoc&&!hasLoc(e)?'Tap where on the pitch it was scored from.':'Pick who scored.'}</p>${needWho?'':'<div class="row"><button class="btn" data-done="1">Skip</button></div>'}`;
+    const sh=document.getElementById('sheet');
+    sh.innerHTML=`<div class="sheet-bg"><div class="sheet" role="dialog" aria-label="Details">${head}${missChips}${srcChips}${pitch}${sideChips}${who}${foot}</div></div>`;sh.hidden=false;
+    const svg=document.getElementById('afterpitch');
+    if(svg)svg.addEventListener('click',ev=>{const r=svg.getBoundingClientRect();if(!r.width)return;const D=DEPTH(m.code);
+      e.lx=Math.round(Math.max(0,Math.min(PW,(ev.clientX-r.left)/r.width*PW))*2)/2;e.ly=Math.round(Math.max(0,Math.min(D,(ev.clientY-r.top)/r.height*D))*2)/2;
+      if(m.arc&&footy(m.code)&&e.src!=='pen'){if(e.type==='point'&&outsideArc(e,m.code,m.arc))e.type='two';else if(e.type==='two'&&!outsideArc(e,m.code,m.arc))e.type='point'}
+      syncResult(m);persist();draw()});
+  };
+  draw();
+  document.getElementById('sheet').onclick=ev=>{
+    const g=ev.target.closest.bind(ev.target);
+    if(g('[data-undo]')){m.events=m.events.filter(x=>x!==e);audit(m,'Undid '+describe(m,e));closeSheet();syncResult(m);persist();render();toast('Undone');return}
+    const mi=g('[data-miss]');if(mi){e.type=mi.dataset.miss;persist();draw();return}
+    const sr=g('[data-src]');if(sr){e.src=sr.dataset.src;if(e.src==='pen'){e.lx=40;e.ly=11;if(e.type==='two')e.type='point'}persist();draw();return}
+    const s4=g('[data-s45]');if(s4){e.lx=s4.dataset.s45==='Left'?14:s4.dataset.s45==='Right'?66:40;e.ly=footy(m.code)?45:65;persist();draw();return}
+    const p=g('[data-pid]');if(p&&p.dataset.pid){e.pid=p.dataset.pid;persist();
+      if((!needLoc||hasLoc(e))){closeSheet();render();toast(lbl(e.type,m.code)+' · '+pName(t,e.pid));return}draw();return}
+    if(g('[data-done]')){if(needWho&&!e.pid)return;if(needLoc&&!hasLoc(e))return;closeSheet();render()}
+  };
+}
+// re-open details for a logged event (Add / Change player)
+acts.addPlayer=d=>{const m=active();const e=m&&m.events.find(x=>x.id===d.id);if(!e)return;if(canScore(m))openAfter(m,e);else openEdit(m,e,true)};
+
+function openPin(f,matchId){
+  sheet(`${sheetHead('Match PIN')}
+    <p class="legend">Enter the 4-digit PIN for this match. It works for this match only and expires at full time. Your edits are logged under your name.</p>
+    <input id="pinin" class="pinbox" inputmode="numeric" maxlength="4" autocomplete="one-time-code" placeholder="••••">
+    <p class="legend">Demo: the PIN for this match is <b>${esc(f.pin)}</b>. In the full version the coach or PRO sends it to the scorer.</p>
+    <div class="row"><button class="btn pri" data-ok="1">Start scoring</button></div>`,e=>{
+    if(!e.target.dataset.ok)return;const v=(document.getElementById('pinin').value||'').trim();
+    if(v!==f.pin){toast('That PIN doesn\u2019t match this match');return}
+    (f.pinOk=f.pinOk||[]).push(S.me);persist();closeSheet();
+    if(matchId){S.active=matchId;S.tab='match';persist();render()}else acts.startFx({id:f.id})});
+  setTimeout(()=>{const i=document.getElementById('pinin');i&&i.focus()},50);
 }

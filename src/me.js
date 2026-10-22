@@ -11,7 +11,7 @@ function pitchSVG(code,arc,shots){
   for(const m of[13,20,45,65])if(m<D)s+=`<line class="ln" x1="0" y1="${X(m)}" x2="${w}" y2="${X(m)}"/><text class="lbl" x="${w-4}" y="${X(m)-4}" text-anchor="end">${m}m</text>`;
   if(OG.footy(code)&&arc)s+=`<path class="arc" d="M0 0 A${X(40)} ${X(40)} 0 0 0 ${w} 0"/>`;
   s+=`<line class="post" x1="${X(36.75)}" y1="2" x2="${X(43.25)}" y2="2"/>`;
-  for(const e of shots)s+=`<circle class="${e.type==='goal'?'dot-g':e.type==='two'?'dot-2':e.type==='point'?'dot-s':'dot-m'}" cx="${e.lx*Sx}" cy="${e.ly*Sx}" r="${e.type==='goal'?7:5.5}"/>`;
+  for(const e of shots){const x=e.lx*Sx,y=e.ly*Sx;if(!['goal','point','two'].includes(e.type)){s+=`<g class="dot-x"><path d="M${x-5} ${y-5}L${x+5} ${y+5}M${x+5} ${y-5}L${x-5} ${y+5}"/></g>`;continue}s+=`<circle class="${e.type==='goal'?'dot-g':e.type==='two'?'dot-2':'dot-s'}" cx="${x}" cy="${y}" r="${e.type==='goal'?7:5.5}"/>`}
   return s+'</svg>';
 }
 function joinRow(s){return `<div class="row">${s&&s.joinUrl?`<a class="btn amb" href="${esc(s.joinUrl)}" target="_blank" rel="noopener">Join / Renew on Foireann ↗</a>`:''}${s&&s.lottoUrl?`<a class="btn" href="${esc(s.lottoUrl)}" target="_blank" rel="noopener">Club lotto ↗</a>`:''}</div>`}
@@ -59,7 +59,6 @@ function show(d){
     <div class="kpi"><b>${t.s45}/${t.t45}</b><span>${s45}s scored/taken</span></div>
     <div class="kpi"><b>${t.fromFree}</b><span>Scores from frees</span></div>
     <div class="kpi"><b>${t.tow}–${t.tol}</b><span>Turnovers won–lost</span></div>
-    <div class="kpi"><b>${t.fwon}–${t.fcon}</b><span>Frees won–given</span></div>
     ${t.save?`<div class="kpi"><b>${t.save}</b><span>Saves</span></div>`:''}
     <div class="kpi"><b>${t.yellow}/${d.code==='football'?t.black+'/':''}${t.red}</b><span>Cards Y/${d.code==='football'?'B/':''}R</span></div>`}
   </div>${gg?'<p class="legend">Go Games are non-competitive, so no scores are recorded. Every child gets game time.</p>':''}</section>

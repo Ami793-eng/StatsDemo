@@ -44,7 +44,7 @@ function matchCard(m){
         ${row(u.y+(black?'/'+u.b:'')+'/'+u.r,'Cards Y/'+(black?'B/':'')+'R',t.y+(black?'/'+t.b:'')+'/'+t.r)}
       </div>
       <div class="ph"><h3>Match events</h3><div class="seg"><button data-mode="key" data-mid="${esc(m.id)}" aria-pressed="${show==='key'}">Key moments</button><button data-mode="all" data-mid="${esc(m.id)}" aria-pressed="${show==='all'}">All</button></div></div>
-      <div class="evs">${evs.length?evs.map(e=>`<div class="ev ${e.side}${e.pts&&e.side==='us'?' sc':''}"><div class="t">${halfTag(e.per)}<b>${isPlaying(e.per)?OG.minOf(e.sec,e.per<=2?m.half:m.etHalf):''}</b></div>
+      <div class="evs">${evs.length?evs.map(e=>`<div class="ev ${e.side} t-${esc(e.type)}${e.pts&&e.side==='us'?' sc':''}"><div class="t">${halfTag(e.per)}<b>${isPlaying(e.per)?OG.minOf(e.sec,e.per<=2?m.half:m.etHalf):''}</b></div>
         <div class="w"><span class="tag ${esc(e.type)}">${esc(e.label)}</span>${e.src?' <small>'+esc(e.src)+'</small>':''}${e.sinbin?' <small>sin-bin</small>':''}<span>${esc(e.side==='them'?m.opp:(e.who||m.club))}</span></div>
         <div class="p">${e.pts?'+'+e.pts:''}</div></div>`).join(''):'<p class="empty">Nothing yet.</p>'}</div>`}
     </div></article>`;

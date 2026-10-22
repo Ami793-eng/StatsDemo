@@ -1,6 +1,6 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#132a86"><meta name="robots" content="noindex">
 <link rel="icon" type="image/png" href="favicon.png"><link rel="apple-touch-icon" href="apple-touch-icon.png"><link rel="manifest" href="manifest.webmanifest"><meta name="apple-mobile-web-app-capable" content="yes">
-<title>Owenmore Gaels Live</title>
+<title>Gaels Beo Live</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&display=swap">
 <style>html{-webkit-text-size-adjust:100%}body{margin:0}[hidden]{display:none!important}img{max-width:100%}:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
@@ -10,7 +10,7 @@
   --royal:#1f3fbf; --royal-2:#132a86; --royal-text:#1f3fbf; --royal-soft:#e3e9fb;
   --amber:#f5a800; --amber-ink:#1d1300; --amber-text:#9a6300; --amber-soft:#fff3d6;
   --them:#0d7d72; --good:#16884f; --bad:#cf3a2e; --card-y:#f2c200; --card-r:#cf3a2e; --card-b:#15171d;
-  --pitch:#e6ecfb; --pitch-line:#a8b6df; --on-band:#ffffff; --on-band-muted:rgba(255,255,255,.72);
+  --pitch:#e6ecfb; --pitch-line:#a8b6df; --goal:#17a34a; --pointc:#ffffff; --point-edge:#0f1a3a; --two:#ff7a00; --miss:#b0122c; --on-band:#ffffff; --on-band-muted:rgba(255,255,255,.72);
   --display:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;
   --body:"Barlow",system-ui,-apple-system,"Segoe UI",sans-serif;
   --r:14px;
@@ -20,13 +20,13 @@
   --royal:#2f52d6; --royal-2:#14246a; --royal-text:#7e9bff; --royal-soft:#18245a;
   --amber:#ffb81f; --amber-ink:#1d1300; --amber-text:#ffc449; --amber-soft:#2e2510;
   --them:#33c4b2; --good:#3fd08a; --bad:#ff6a5e; --card-y:#ffd23f; --card-r:#ff6a5e; --card-b:#d4dae9;
-  --pitch:#0c1636; --pitch-line:#33478a; color-scheme:dark}}
+  --pitch:#0c1636; --pitch-line:#33478a; --goal:#2fc766; --pointc:#ffffff; --point-edge:#0f1a3a; --two:#ff8a1f; --miss:#ff4d78; color-scheme:dark}}
 :root[data-theme="dark"]{
   --bg:#070c1d; --surface:#0f1730; --surface2:#16203f; --line:#26335d; --fg:#e8ecf8; --muted:#98a3c4;
   --royal:#2f52d6; --royal-2:#14246a; --royal-text:#7e9bff; --royal-soft:#18245a;
   --amber:#ffb81f; --amber-ink:#1d1300; --amber-text:#ffc449; --amber-soft:#2e2510;
   --them:#33c4b2; --good:#3fd08a; --bad:#ff6a5e; --card-y:#ffd23f; --card-r:#ff6a5e; --card-b:#d4dae9;
-  --pitch:#0c1636; --pitch-line:#33478a; color-scheme:dark}
+  --pitch:#0c1636; --pitch-line:#33478a; --goal:#2fc766; --pointc:#ffffff; --point-edge:#0f1a3a; --two:#ff8a1f; --miss:#ff4d78; color-scheme:dark}
 *{box-sizing:border-box}
 body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:15px;line-height:1.45}
 body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--royal-2)}
@@ -134,6 +134,26 @@ td .pc{color:var(--muted);font-size:12px;margin-left:4px}
 .form .W{background:var(--good)} .form .L{background:var(--bad)} .form .D{background:var(--amber);color:var(--amber-ink)}
 .grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));gap:16px;align-items:start}
 .grid2>*{min-width:0}
+
+/* Score colour code: green goal, white point, orange 2-pointer, red miss */
+.pitch .dot-g{fill:var(--goal);stroke:#fff;stroke-width:2}
+.pitch .dot-s{fill:var(--pointc);stroke:var(--point-edge);stroke-width:1.8}
+.pitch .dot-2{fill:var(--two);stroke:#fff;stroke-width:1.8}
+.pitch .dot-m{fill:var(--miss);stroke:#fff;stroke-width:1.5}
+.pkey .g{background:var(--goal);border:2px solid #fff;box-shadow:0 0 0 1px var(--line)}
+.pkey .s{background:var(--pointc);border:1.5px solid var(--point-edge)}
+.pkey .two{background:var(--two);border:2px solid #fff;box-shadow:0 0 0 1px var(--line)}
+.pkey .m{background:var(--miss);border:2px solid #fff;box-shadow:0 0 0 1px var(--line)}
+.tag.goal{background:var(--goal)!important;color:#fff!important}
+.tag.point{background:var(--pointc)!important;color:#0f1a3a!important;box-shadow:inset 0 0 0 1.5px var(--point-edge)}
+.tag.two{background:var(--two)!important;color:#1d1000!important}
+.tag.wide,.tag.short,.tag.saved{background:var(--miss)!important;color:#fff!important}
+.ev.t-goal{border-left-color:var(--goal)!important}.ev.t-point{border-left-color:var(--point-edge)!important}.ev.t-two{border-left-color:var(--two)!important}.ev.t-wide,.ev.t-short,.ev.t-saved{border-left-color:var(--miss)!important}
+
+.pitch .dot-x path{stroke:var(--miss);stroke-width:3;stroke-linecap:round;fill:none;filter:drop-shadow(0 0 1px #fff)}
+.pkey .m{background:none!important;border:0!important;box-shadow:none!important;position:relative}
+.pkey .m::before,.pkey .m::after,.dotk.m::before,.dotk.m::after{content:"";position:absolute;left:50%;top:50%;width:13px;height:3px;background:var(--miss);border-radius:2px}
+.pkey .m::before,.dotk.m::before{transform:translate(-50%,-50%) rotate(45deg)} .pkey .m::after,.dotk.m::after{transform:translate(-50%,-50%) rotate(-45deg)}
 /* Parents' page */
 .top-in{padding-block:10px}
 .banner{background:var(--amber-soft);border:1px dashed var(--amber);border-radius:12px;padding:10px 12px;font-size:14px}
@@ -279,7 +299,7 @@ function crestFor(name) {
 /* ===== Owenmore Gaels demo: shared model + example season =====
    Real 2026 results (scorelines, dates, opponents, venues). Players, Foireann numbers and the
    events behind each score are invented examples generated to add up to the real scores. */
-const DEMO_KEY='owenmore-gaels-demo-v2', DEMO_VER=5;
+const DEMO_KEY='owenmore-gaels-demo-v2', DEMO_VER=6;
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const pad=n=>String(n).padStart(2,'0');
 const mmss=s=>{s=Math.max(0,Math.floor(s));return pad(Math.floor(s/60))+':'+pad(s%60)};
@@ -287,7 +307,7 @@ const HOME_GROUND='Connolly Park, Collooney';
 
 const OG={};
 OG.LABEL={goal:'Goal',point:'Point',two:'2-pointer',wide:'Wide',short:'Dropped short',saved:'Saved / blocked',w45:'45 won',
-  fwon:'Free won',fcon:'Free conceded',kow:'Our kick-out won',kol:'Our kick-out lost',okw:'Their kick-out won',okl:'Their kick-out lost',
+  fwon:'Free won',fcon:'Free conceded',kow:'Kick-out won',kol:'Kick-out lost',okw:'Their kick-out won',okl:'Their kick-out lost',
   tow:'Turnover won',tol:'Turnover lost',save:'Save',yellow:'Yellow card',black:'Black card',red:'Red card',sub:'Substitution',bloodret:'Blood sub return',note:'Note'};
 OG.PTS={goal:3,point:1,two:2};
 OG.SHOTS=['goal','point','two','wide','short','saved'];
@@ -373,7 +393,9 @@ OG.outsideArc=(e,m)=>OG.footy(m.code)&&m.arc&&typeof e.lx==='number'&&Math.hypot
 OG.tally=(r,e,m)=>{if(e.type in r)r[e.type]++;
   if(OG.SHOTS.includes(e.type)){if(e.src==='45'){r.t45++;if(OG.PTS[e.type])r.s45++}if(e.type==='two'||OG.outsideArc(e,m))r.twoAtt++}
   if(OG.PTS[e.type]){r.pts+=OG.PTS[e.type];if(e.type==='goal')r.scoreG++;else r.scoreP+=OG.PTS[e.type];if(e.src==='free')r.fromFree++;if(e.src==='45')r.from45++;if(e.src==='pen')r.fromPen++}};
-OG.summary=(m,side)=>{const r=OG.blank();for(const e of m.events)if(e.side===side)OG.tally(r,e,m);
+// A turnover won by one team is a turnover lost by the other; their kick-out lost is one we won.
+OG.cross=(r,e)=>{if(e.type==='kow')r.okl++;else if(e.type==='kol')r.okw++;else if(e.type==='tow')r.tol++;else if(e.type==='tol')r.tow++;else if(e.type==='okw')r.kol++;else if(e.type==='okl')r.kow++};
+OG.summary=(m,side)=>{const r=OG.blank();for(const e of m.events){if(e.side===side)OG.tally(r,e,m);else OG.cross(r,e)}
   return{scores:r.goal+r.point+r.two,shots:OG.SHOTS.reduce((a,t)=>a+r[t],0),wide:r.wide,tow:r.tow,tol:r.tol,kow:r.kow,kol:r.kol,okw:r.okw,okl:r.okl,fwon:r.fwon,fcon:r.fcon,y:r.yellow,b:r.black,r:r.red,save:r.save}};
 
 /* ----- match report ----- */
@@ -485,7 +507,7 @@ function dmGen(t,res,R,by){
       const op=et?res.et.them:[res.them[0]-(hasET?res.et.them[0]:0),res.them[1]-(hasET?res.et.them[1]:0)];
       let twos=t.arc?Math.min(Math.floor(sp[1]/2),et?1:Math.floor(R()*4)):0;let ones=sp[1]-2*twos;
       for(let i=0;i<sp[0];i++){const w=pickTime(et);const pen=R()<.12;add(Object.assign({side:'us',type:'goal',src:pen?'pen':'play',pid:pen?taker(w.per,w.sec):wpick(w.per,w.sec,'att')},w,pen?{lx:40,ly:11}:loc(5,14)))}
-      for(let i=0;i<twos;i++){const w=pickTime(et);const k=R();if(k<.2&&!et){add(Object.assign({side:'us',type:'w45'},w));add(Object.assign({side:'us',type:'two',pid:t.id+'-p1',src:'45',lx:R()<.5?14:66,ly:45},w,{sec:w.sec+20}))}else add(Object.assign({side:'us',type:'two',src:k<.5||et?'free':'play'},w,{pid:k<.5||et?taker(w.per,w.sec):wpick(w.per,w.sec,'att')},loc(41,47)))}
+      for(let i=0;i<twos;i++){const w=pickTime(et);const k=R();if(k<.2&&!et){add(Object.assign({side:'us',type:'two',pid:t.id+'-p1',src:'45',lx:R()<.5?14:66,ly:45},w,{sec:w.sec+20}))}else add(Object.assign({side:'us',type:'two',src:k<.5||et?'free':'play'},w,{pid:k<.5||et?taker(w.per,w.sec):wpick(w.per,w.sec,'att')},loc(41,47)))}
       for(let i=0;i<ones;i++){const w=pickTime(et);const k=R(),src=k<.3?'free':k<.38?'mark':'play';add(Object.assign({side:'us',type:'point',src},w,{pid:src==='free'?taker(w.per,w.sec):wpick(w.per,w.sec,'att')},loc(src==='free'?18:12,src==='free'?36:38)))}
       const otwo=t.arc?Math.min(Math.floor(op[1]/2),Math.floor(R()*3)):0;
       for(let i=0;i<op[0];i++)add(Object.assign({side:'them',type:'goal'},pickTime(et)));
@@ -495,11 +517,11 @@ function dmGen(t,res,R,by){
       for(let i=0,k=Math.round(sc*.4+R()*3);i<k;i++){const w=pickTime(et);const fr=R()<.25;add(Object.assign({side:'us',type:R()<.8?'wide':R()<.5?'short':'saved',src:fr?'free':'play'},w,{pid:fr?taker(w.per,w.sec):wpick(w.per,w.sec,'att')},loc(14,44)))}
       for(let i=0,k=Math.round((op[0]+op[1])*.5+R()*2);i<k;i++)add(Object.assign({side:'them',type:'wide'},pickTime(et)));
     }
-    const t45miss=Math.floor(R()*3);for(let i=0;i<t45miss;i++){const w=pickTime(false);add(Object.assign({side:'us',type:'w45'},w));add(Object.assign({side:'us',type:R()<.6?'wide':'short',pid:t.id+'-p1',src:'45',lx:R()<.5?14:66,ly:45},w,{sec:w.sec+20}))}
+    const t45miss=Math.floor(R()*3);for(let i=0;i<t45miss;i++){const w=pickTime(false);add(Object.assign({side:'us',type:R()<.6?'wide':'short',pid:t.id+'-p1',src:'45',lx:R()<.5?14:66,ly:45},w,{sec:w.sec+20}))}
     const many=(type,lo,hi,who)=>{for(let i=0,k=lo+Math.floor(R()*(hi-lo+1));i<k;i++){const w=pickTime(false);add(Object.assign({side:'us',type},w,who?{pid:R()<.7?wpick(w.per,w.sec,who):null}:{}))}};
-    many('tow',7,14,'any');many('tol',5,11,'any');many('fwon',7,13,'att');many('fcon',5,11,'any');
-    many('kow',9,16);many('kol',2,6);many('okw',3,8);many('okl',7,12);
-    for(let i=0,k=1+Math.floor(R()*3);i<k;i++){const w=pickTime(false);add(Object.assign({side:'us',type:'save',pid:t.id+'-p1'},w))}
+    many('tow',7,14,'any');many('tol',4,8,'any');many('kow',9,16);many('kol',2,6);
+    const them=(type,lo,hi)=>{for(let i=0,k=lo+Math.floor(R()*(hi-lo+1));i<k;i++)add(Object.assign({side:'them',type},pickTime(false)))};
+    them('kow',7,12);them('kol',3,8);them('tow',1,4);
     const rule=OG.sinbinRule(t);
     if(rule&&rule.card!=='yellow')for(let i=0,k=Math.floor(R()*2);i<k;i++){const w=pickTime(false);add(Object.assign({side:'us',type:'yellow',pid:wpick(w.per,w.sec,'any')},w))}
     if(res.sinbin&&rule){const w={per:1,sec:Math.floor(500+R()*600)};add(Object.assign({side:'us',type:rule.card,pid:wpick(w.per,w.sec,'any'),sinbin:rule.secs},w));const w2={per:2,sec:Math.floor(400+R()*600)};add(Object.assign({side:'them',type:rule.card,sinbin:rule.secs},w2))}
@@ -528,7 +550,7 @@ function buildDemo(){
     if(r.edit){const e=m.events.find(x=>x.side==='us'&&x.type==='point'&&x.pid);if(e){const was=OG.fullName(t,e.pid);const other=t.players[13].id;if(other!==e.pid){e.pid=other;m.audit.push({at:e.at+3600e3,who:'Pádraig',action:`Changed scorer of point at ${OG.minOf(e.sec,t.half)} (${OG.perShort(e.per)}) from ${was} to ${OG.fullName(t,other)}`})}}}
     m.audit.push({at:Date.parse(r.date+'T'+r.time+':00Z')+(g.hasET?100:80)*60e3,who:scorer?scorer.name:'Coach',action:'Finished match'});
     fx.matchId=m.id;if(!r.gogames)fx.result={us:OG.score(m,'us'),them:OG.score(m,'them')};S.fixtures.push(fx);S.matches.push(m)});
-  DEMO_UPCOMING.forEach((u,i)=>{const f=Object.assign({id:'fx-u'+i,teamId:u.t,status:'upcoming',createdAt:Date.now()-3*86400e3},u);delete f.t;if(u.prev)f.changedAt=Date.now()-5*3600e3;S.fixtures.push(f)});
+  DEMO_UPCOMING.forEach((u,i)=>{const f=Object.assign({id:'fx-u'+i,teamId:u.t,status:'upcoming',createdAt:Date.now()-3*86400e3},u);delete f.t;if(f.scorer)f.pin=String(4821+i*1379).slice(-4);if(u.prev)f.changedAt=Date.now()-5*3600e3;S.fixtures.push(f)});
   return S;
 }
 function loadDemo(){try{const s=JSON.parse(localStorage.getItem(DEMO_KEY)||'null');if(s&&s.v===5&&s.demoVer===DEMO_VER)return s}catch(e){}return buildDemo()}
@@ -660,7 +682,7 @@ function matchCard(m){
         ${row(u.y+(black?'/'+u.b:'')+'/'+u.r,'Cards Y/'+(black?'B/':'')+'R',t.y+(black?'/'+t.b:'')+'/'+t.r)}
       </div>
       <div class="ph"><h3>Match events</h3><div class="seg"><button data-mode="key" data-mid="${esc(m.id)}" aria-pressed="${show==='key'}">Key moments</button><button data-mode="all" data-mid="${esc(m.id)}" aria-pressed="${show==='all'}">All</button></div></div>
-      <div class="evs">${evs.length?evs.map(e=>`<div class="ev ${e.side}${e.pts&&e.side==='us'?' sc':''}"><div class="t">${halfTag(e.per)}<b>${isPlaying(e.per)?OG.minOf(e.sec,e.per<=2?m.half:m.etHalf):''}</b></div>
+      <div class="evs">${evs.length?evs.map(e=>`<div class="ev ${e.side} t-${esc(e.type)}${e.pts&&e.side==='us'?' sc':''}"><div class="t">${halfTag(e.per)}<b>${isPlaying(e.per)?OG.minOf(e.sec,e.per<=2?m.half:m.etHalf):''}</b></div>
         <div class="w"><span class="tag ${esc(e.type)}">${esc(e.label)}</span>${e.src?' <small>'+esc(e.src)+'</small>':''}${e.sinbin?' <small>sin-bin</small>':''}<span>${esc(e.side==='them'?m.opp:(e.who||m.club))}</span></div>
         <div class="p">${e.pts?'+'+e.pts:''}</div></div>`).join(''):'<p class="empty">Nothing yet.</p>'}</div>`}
     </div></article>`;

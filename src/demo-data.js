@@ -1,7 +1,7 @@
 /* ===== Owenmore Gaels demo: shared model + example season =====
    Real 2026 results (scorelines, dates, opponents, venues). Players, Foireann numbers and the
    events behind each score are invented examples generated to add up to the real scores. */
-const DEMO_KEY='owenmore-gaels-demo-v2', DEMO_VER=5;
+const DEMO_KEY='owenmore-gaels-demo-v2', DEMO_VER=6;
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const pad=n=>String(n).padStart(2,'0');
 const mmss=s=>{s=Math.max(0,Math.floor(s));return pad(Math.floor(s/60))+':'+pad(s%60)};
@@ -9,7 +9,7 @@ const HOME_GROUND='Connolly Park, Collooney';
 
 const OG={};
 OG.LABEL={goal:'Goal',point:'Point',two:'2-pointer',wide:'Wide',short:'Dropped short',saved:'Saved / blocked',w45:'45 won',
-  fwon:'Free won',fcon:'Free conceded',kow:'Our kick-out won',kol:'Our kick-out lost',okw:'Their kick-out won',okl:'Their kick-out lost',
+  fwon:'Free won',fcon:'Free conceded',kow:'Kick-out won',kol:'Kick-out lost',okw:'Their kick-out won',okl:'Their kick-out lost',
   tow:'Turnover won',tol:'Turnover lost',save:'Save',yellow:'Yellow card',black:'Black card',red:'Red card',sub:'Substitution',bloodret:'Blood sub return',note:'Note'};
 OG.PTS={goal:3,point:1,two:2};
 OG.SHOTS=['goal','point','two','wide','short','saved'];
@@ -95,7 +95,9 @@ OG.outsideArc=(e,m)=>OG.footy(m.code)&&m.arc&&typeof e.lx==='number'&&Math.hypot
 OG.tally=(r,e,m)=>{if(e.type in r)r[e.type]++;
   if(OG.SHOTS.includes(e.type)){if(e.src==='45'){r.t45++;if(OG.PTS[e.type])r.s45++}if(e.type==='two'||OG.outsideArc(e,m))r.twoAtt++}
   if(OG.PTS[e.type]){r.pts+=OG.PTS[e.type];if(e.type==='goal')r.scoreG++;else r.scoreP+=OG.PTS[e.type];if(e.src==='free')r.fromFree++;if(e.src==='45')r.from45++;if(e.src==='pen')r.fromPen++}};
-OG.summary=(m,side)=>{const r=OG.blank();for(const e of m.events)if(e.side===side)OG.tally(r,e,m);
+// A turnover won by one team is a turnover lost by the other; their kick-out lost is one we won.
+OG.cross=(r,e)=>{if(e.type==='kow')r.okl++;else if(e.type==='kol')r.okw++;else if(e.type==='tow')r.tol++;else if(e.type==='tol')r.tow++;else if(e.type==='okw')r.kol++;else if(e.type==='okl')r.kow++};
+OG.summary=(m,side)=>{const r=OG.blank();for(const e of m.events){if(e.side===side)OG.tally(r,e,m);else OG.cross(r,e)}
   return{scores:r.goal+r.point+r.two,shots:OG.SHOTS.reduce((a,t)=>a+r[t],0),wide:r.wide,tow:r.tow,tol:r.tol,kow:r.kow,kol:r.kol,okw:r.okw,okl:r.okl,fwon:r.fwon,fcon:r.fcon,y:r.yellow,b:r.black,r:r.red,save:r.save}};
 
 /* ----- match report ----- */
@@ -207,7 +209,7 @@ function dmGen(t,res,R,by){
       const op=et?res.et.them:[res.them[0]-(hasET?res.et.them[0]:0),res.them[1]-(hasET?res.et.them[1]:0)];
       let twos=t.arc?Math.min(Math.floor(sp[1]/2),et?1:Math.floor(R()*4)):0;let ones=sp[1]-2*twos;
       for(let i=0;i<sp[0];i++){const w=pickTime(et);const pen=R()<.12;add(Object.assign({side:'us',type:'goal',src:pen?'pen':'play',pid:pen?taker(w.per,w.sec):wpick(w.per,w.sec,'att')},w,pen?{lx:40,ly:11}:loc(5,14)))}
-      for(let i=0;i<twos;i++){const w=pickTime(et);const k=R();if(k<.2&&!et){add(Object.assign({side:'us',type:'w45'},w));add(Object.assign({side:'us',type:'two',pid:t.id+'-p1',src:'45',lx:R()<.5?14:66,ly:45},w,{sec:w.sec+20}))}else add(Object.assign({side:'us',type:'two',src:k<.5||et?'free':'play'},w,{pid:k<.5||et?taker(w.per,w.sec):wpick(w.per,w.sec,'att')},loc(41,47)))}
+      for(let i=0;i<twos;i++){const w=pickTime(et);const k=R();if(k<.2&&!et){add(Object.assign({side:'us',type:'two',pid:t.id+'-p1',src:'45',lx:R()<.5?14:66,ly:45},w,{sec:w.sec+20}))}else add(Object.assign({side:'us',type:'two',src:k<.5||et?'free':'play'},w,{pid:k<.5||et?taker(w.per,w.sec):wpick(w.per,w.sec,'att')},loc(41,47)))}
       for(let i=0;i<ones;i++){const w=pickTime(et);const k=R(),src=k<.3?'free':k<.38?'mark':'play';add(Object.assign({side:'us',type:'point',src},w,{pid:src==='free'?taker(w.per,w.sec):wpick(w.per,w.sec,'att')},loc(src==='free'?18:12,src==='free'?36:38)))}
       const otwo=t.arc?Math.min(Math.floor(op[1]/2),Math.floor(R()*3)):0;
       for(let i=0;i<op[0];i++)add(Object.assign({side:'them',type:'goal'},pickTime(et)));
@@ -217,11 +219,11 @@ function dmGen(t,res,R,by){
       for(let i=0,k=Math.round(sc*.4+R()*3);i<k;i++){const w=pickTime(et);const fr=R()<.25;add(Object.assign({side:'us',type:R()<.8?'wide':R()<.5?'short':'saved',src:fr?'free':'play'},w,{pid:fr?taker(w.per,w.sec):wpick(w.per,w.sec,'att')},loc(14,44)))}
       for(let i=0,k=Math.round((op[0]+op[1])*.5+R()*2);i<k;i++)add(Object.assign({side:'them',type:'wide'},pickTime(et)));
     }
-    const t45miss=Math.floor(R()*3);for(let i=0;i<t45miss;i++){const w=pickTime(false);add(Object.assign({side:'us',type:'w45'},w));add(Object.assign({side:'us',type:R()<.6?'wide':'short',pid:t.id+'-p1',src:'45',lx:R()<.5?14:66,ly:45},w,{sec:w.sec+20}))}
+    const t45miss=Math.floor(R()*3);for(let i=0;i<t45miss;i++){const w=pickTime(false);add(Object.assign({side:'us',type:R()<.6?'wide':'short',pid:t.id+'-p1',src:'45',lx:R()<.5?14:66,ly:45},w,{sec:w.sec+20}))}
     const many=(type,lo,hi,who)=>{for(let i=0,k=lo+Math.floor(R()*(hi-lo+1));i<k;i++){const w=pickTime(false);add(Object.assign({side:'us',type},w,who?{pid:R()<.7?wpick(w.per,w.sec,who):null}:{}))}};
-    many('tow',7,14,'any');many('tol',5,11,'any');many('fwon',7,13,'att');many('fcon',5,11,'any');
-    many('kow',9,16);many('kol',2,6);many('okw',3,8);many('okl',7,12);
-    for(let i=0,k=1+Math.floor(R()*3);i<k;i++){const w=pickTime(false);add(Object.assign({side:'us',type:'save',pid:t.id+'-p1'},w))}
+    many('tow',7,14,'any');many('tol',4,8,'any');many('kow',9,16);many('kol',2,6);
+    const them=(type,lo,hi)=>{for(let i=0,k=lo+Math.floor(R()*(hi-lo+1));i<k;i++)add(Object.assign({side:'them',type},pickTime(false)))};
+    them('kow',7,12);them('kol',3,8);them('tow',1,4);
     const rule=OG.sinbinRule(t);
     if(rule&&rule.card!=='yellow')for(let i=0,k=Math.floor(R()*2);i<k;i++){const w=pickTime(false);add(Object.assign({side:'us',type:'yellow',pid:wpick(w.per,w.sec,'any')},w))}
     if(res.sinbin&&rule){const w={per:1,sec:Math.floor(500+R()*600)};add(Object.assign({side:'us',type:rule.card,pid:wpick(w.per,w.sec,'any'),sinbin:rule.secs},w));const w2={per:2,sec:Math.floor(400+R()*600)};add(Object.assign({side:'them',type:rule.card,sinbin:rule.secs},w2))}
@@ -250,7 +252,7 @@ function buildDemo(){
     if(r.edit){const e=m.events.find(x=>x.side==='us'&&x.type==='point'&&x.pid);if(e){const was=OG.fullName(t,e.pid);const other=t.players[13].id;if(other!==e.pid){e.pid=other;m.audit.push({at:e.at+3600e3,who:'Pádraig',action:`Changed scorer of point at ${OG.minOf(e.sec,t.half)} (${OG.perShort(e.per)}) from ${was} to ${OG.fullName(t,other)}`})}}}
     m.audit.push({at:Date.parse(r.date+'T'+r.time+':00Z')+(g.hasET?100:80)*60e3,who:scorer?scorer.name:'Coach',action:'Finished match'});
     fx.matchId=m.id;if(!r.gogames)fx.result={us:OG.score(m,'us'),them:OG.score(m,'them')};S.fixtures.push(fx);S.matches.push(m)});
-  DEMO_UPCOMING.forEach((u,i)=>{const f=Object.assign({id:'fx-u'+i,teamId:u.t,status:'upcoming',createdAt:Date.now()-3*86400e3},u);delete f.t;if(u.prev)f.changedAt=Date.now()-5*3600e3;S.fixtures.push(f)});
+  DEMO_UPCOMING.forEach((u,i)=>{const f=Object.assign({id:'fx-u'+i,teamId:u.t,status:'upcoming',createdAt:Date.now()-3*86400e3},u);delete f.t;if(f.scorer)f.pin=String(4821+i*1379).slice(-4);if(u.prev)f.changedAt=Date.now()-5*3600e3;S.fixtures.push(f)});
   return S;
 }
 function loadDemo(){try{const s=JSON.parse(localStorage.getItem(DEMO_KEY)||'null');if(s&&s.v===5&&s.demoVer===DEMO_VER)return s}catch(e){}return buildDemo()}

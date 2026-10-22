@@ -45,7 +45,7 @@ function pitchSVG(o){
   for(const m of[13,20,45,65])if(m<D)s+=`<line class="ln${o.hl45&&m===(footy(o.code)?45:65)?' l45':''}" x1="0" y1="${X(m)}" x2="${w}" y2="${X(m)}"/><text class="lbl" x="${w-4}" y="${X(m)-4}" text-anchor="end">${m}m</text>`;
   if(footy(o.code)&&o.arc)s+=`<path class="arc" d="M0 0 A${X(40)} ${X(40)} 0 0 0 ${w} 0"/><text class="lbl" x="${X(40)}" y="${X(40)+13}" text-anchor="middle">2-point arc</text>`;
   s+=`<line class="post" x1="${X(36.75)}" y1="2" x2="${X(43.25)}" y2="2"/>`;
-  for(const d of o.dots||[])s+=`<circle class="${d.cls}" cx="${(d.lx*Sx).toFixed(1)}" cy="${(d.ly*Sx).toFixed(1)}" r="${d.cls==='dot-g'?7:5.5}">${d.t?`<title>${esc(d.t)}</title>`:''}</circle>`;
+  for(const d of o.dots||[]){if(d.cls==='dot-m'){const x=(d.lx*Sx).toFixed(1),y=(d.ly*Sx).toFixed(1),r=5;s+=`<g class="dot-x"><title>${esc(d.t||'Miss')}</title><path d="M${x-r} ${y-r}L${+x+r} ${+y+r}M${+x+r} ${y-r}L${x-r} ${+y+r}"/></g>`;continue}s+=`<circle class="${d.cls}" cx="${(d.lx*Sx).toFixed(1)}" cy="${(d.ly*Sx).toFixed(1)}" r="${d.cls==='dot-g'?7:5.5}">${d.t?`<title>${esc(d.t)}</title>`:''}</circle>`}
   if(o.mark)s+=`<circle class="mark" cx="${o.mark.lx*Sx}" cy="${o.mark.ly*Sx}" r="9"/>`;
   return s+'</svg>';
 }
@@ -86,7 +86,7 @@ function teamStats(tid){
     const mins=OG.minutes(m,S.settings);
     for(const [pid,sec] of Object.entries(mins)){const r=rows.get(pid);if(r){r.mins+=sec;if(sec>0){r.apps++;r.games.add(m.id)}}}
     for(const pid of m.lineup||[]){const r=rows.get(pid);if(r)r.starts++}
-    for(const e of m.events){if(e.side!=='us'||e.type==='note')continue;tally(tot,e,m.id,m);
+    for(const e of m.events){if(e.side==='them'){OG.cross(tot,e);continue}if(e.type==='note')continue;tally(tot,e,m.id,m);
       if(e.type==='sub'){const off=rows.get(e.pid),on=rows.get(e.onId);if(off)off.subOff++;if(on)on.subOn++;continue}
       const r=rows.get(e.pid);if(r)tally(r,e,m.id,m)}
     const f=fixture(m.fixtureId);

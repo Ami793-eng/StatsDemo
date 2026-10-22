@@ -25,8 +25,8 @@ page(){ # name title css-files body-file js-files
   } > "../public/$name.html"
 }
 sed "s/^export //" crests.mjs > crests.gen.js
-page index "Owenmore Gaels Demo" "theme.css app.css" app-body.html "badge.js crests.gen.js demo-data.js app-core.js app-actions.js app-views.js"
-page live "Owenmore Gaels Live" "theme.css live.css" live-body.html "badge.js crests.gen.js demo-data.js live.js"
-page me "My Owenmore Stats" "theme.css me.css" me-body.html "badge.js crests.gen.js demo-data.js me.js"
+page index "Gaels Beo" "theme.css app.css" app-body.html "badge.js crests.gen.js demo-data.js app-core.js app-actions.js app-views.js"
+page live "Gaels Beo Live" "theme.css live.css" live-body.html "badge.js crests.gen.js demo-data.js live.js"
+page me "Gaels Beo Player" "theme.css me.css" me-body.html "badge.js crests.gen.js demo-data.js me.js"
 for f in app-core app-sync app-views live me; do [ -f $f.js ] || continue; done
 echo built
