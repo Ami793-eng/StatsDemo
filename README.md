@@ -1,33 +1,36 @@
-# Owenmore Gaels Stats – Demo
+# Owenmore Gaels Stats – Demo (v2, built to the planning brief)
 
-A no-login demo of the club stats app. Nothing to set up: no PINs, no server, no database.
+A no-login demo of the full club app. No server, no database: everything is saved on the device.
 
-## Put it online (2 minutes)
+## Put it online
 1. Go to https://app.netlify.com/drop
 2. Drag the **public** folder onto the page.
-3. Netlify gives you a link. Open it on a phone; "Add to Home Screen" makes it look like an app.
+3. Open the link on a phone and "Add to Home Screen" – it installs like an app and works with no signal.
 
-## What's in it
-| Page | What to try |
-|---|---|
-| `index.html` – coach app | Stats tab (form, shot map, 45s, kick-outs), Club tab overview, Fixtures calendar, and **Start match** on the U20 fixture to score live |
-| `live.html` – parents' page | Live score, clock in minutes with 1st/2nd half, subs, club updates, fixtures, results |
-| `me.html` – player page | Pick a player (or enter a code from the coach app's Squads tab) to see their own stats and shot map |
+## Pages
+| Page | Who | Try this |
+|---|---|---|
+| `index.html` | Admin, coaches, scorers | Use **Viewing as** at the top to switch role. As **Áine (scorer)**, open the U20 game, tap Throw-in and score it. |
+| `live.html` | Public / parents | Live score and clock, subs, sin-bins, club updates, fixtures with map links, season form, results with share cards, score alerts, Join / Renew on Foireann |
+| `me.html` | Player / parent | Pick a player (stands in for their private login code): minutes, appearances, own stats, shot map |
 
-Scoring a match in the coach app shows up on the parents' page **on the same phone or browser**. On another device the parents' page shows an example live match that loops. The full version (with sign-in and a server) shares it with everyone.
+## What's in it (from the brief)
+- **Scorer screen:** clock, big buttons, Undo, "Add player" after quick taps, subs incl. blood subs, cards with sin-bin countdown, half time / full time / extra time, time-stamped notes (keyboard mic for dictation). No passes.
+- **Roles:** admin (all teams, settings), coach (own team only), scorer (assigned matches only), player/parent, public.
+- **One scorer per match** with handover; coaches/admin can take over. Every change is in the audit trail.
+- **Team privacy tiers:** Adult (full names public), Minor (first name + number publicly; stats behind player login), Go Games (no scores, results or tables; minutes and participation only).
+- **Coaches:** minutes played (from starting team + subs log), appearances and scorers leaderboards, automatic match reports (full + public versions), CSV export (match and season).
+- **Parents:** score alerts, shareable result card, venue map link, throw-in time, referee, results archive, season form, Join / Renew on Foireann.
+- **Admin:** Foireann numbers on players, registrar-export import, Foireann API key placeholder (Sligo GAA site is the fallback), Join / Renew link (foireann.ie), optional lotto link, minutes rules (blood subs, sin-bin time).
+- **Rules built in:** GAA football black card = 10 min sin-bin; LGFA yellow card = sin-bin from U14 up (10 min with 30-min halves, 5 min shorter, none to U13); 2-point arc; 45s/65s.
 
-**Reset demo** (Squads tab) puts the example season back.
+## Demo limits (the full version fixes these)
+- Data lives on one device: scoring shows on the public page in the same browser only. Other devices see an example live match.
+- Score alerts only fire while the public page is open; the full version uses push.
+- CSV and image saves ask you to confirm; the CSV is also shown so you can copy it.
 
 ## The data
-- **Real** (2026 season): every scoreline, date, opponent and venue below, plus the upcoming U20 B championship game v Geevagh/St Michaels (Sat 24 Oct, Connolly Park).
-  - Senior: Div 2 League final v Geevagh 1-18 to 1-17 (aet, Bunninadden); Junior A v Coolera/Strandhill 2-21 to 3-6; v Tourlestrane 6-15 to 0-7; Junior A final v St Michael's 1-14 to 0-16 (Markievicz Park)
-  - Ladies Junior B v St John's 4-16 to 2-6 and 8-19 to 4-4 (Eastern Harps)
-  - U16 Girls v St Molaise Gaels 5-14 to 3-6; U13 Girls v CT Gaels 1-7 to 4-15
-- **Invented**: all player names, and the events behind each score (who scored, from where, wides, turnovers, kick-outs, cards, subs). They're generated to add up exactly to the real scorelines.
-- **Examples**: four upcoming fixtures marked "Example", to fill the calendar.
-- Crests: Owenmore Gaels' crest is built in; other clubs' crests load from the Sligo LGFA club list.
-
-Sources: Ocean FM match reports and results round-ups (July–October 2026), sligolgfa.com/results, sligogaa.ie fixtures.
+Real 2026 results (scorelines, dates, opponents, venues) from Ocean FM, Sligo LGFA and Sligo GAA. The U20 fixture v Geevagh/St Michaels (Sat 24 Oct, Connolly Park, Ref M. Duffy) is real. Players, Foireann numbers and the events behind each score are invented and generated to add up exactly to the real scores. Fixtures marked "Example" are made up.
 
 ## Editing
-Source is in `src/`. Run `sh src/build.sh` to rebuild `public/`. Demo data lives in `src/demo-data.js`.
+Source is in `src/`; run `sh src/build.sh` to rebuild `public/`. Demo data is in `src/demo-data.js`.

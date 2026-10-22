@@ -1,11 +1,17 @@
 <header class="top"><div class="top-in">
-  <div class="brand"><div class="badge" id="badge" aria-hidden="true"><img src="badge.png" alt=""></div><div class="bt"><h1 id="club">Owenmore Gaels</h1><small><span id="dot" class="ldot" data-s="wait"></span><span id="upd" class="upd">Connecting…</span></small></div></div>
+  <div class="brand"><div class="badge" id="badge" aria-hidden="true"><img src="badge.png" alt=""></div><div class="bt"><h1 id="club">Owenmore Gaels</h1><small><span id="dot" class="ldot" data-s="wait"></span><span id="upd" class="upd">Loading…</span></small></div>
+  <button id="notify" class="btn sm bellbtn" aria-pressed="false">Get score alerts</button></div>
 </div></header>
 <main>
-  <div id="demo" class="banner" hidden>Preview with example data. Live scores appear here once the app is running on your Netlify site.</div>
+  <div id="demo" class="banner" hidden></div>
+  <div id="msg" class="banner" hidden role="status"></div>
   <section id="live"></section>
+  <section class="panel"><div class="seg" id="teamf"></div></section>
   <section class="panel"><h3>Club updates</h3><div id="updates"></div></section>
   <section class="panel"><h3>Upcoming fixtures</h3><div id="upcoming"></div></section>
-  <section class="panel"><h3>Recent results</h3><div id="results"></div></section>
+  <section class="panel"><h3>Season form</h3><div id="form"></div></section>
+  <section class="panel"><h3>Results</h3><div id="results"></div></section>
+  <section class="panel joinbox"><h3>Be part of it</h3><p class="legend">Club membership is through Foireann, the GAA's membership system.</p><div class="row" id="join"></div></section>
   <p class="foot"><a href="me.html">Player stats</a> · <a href="index.html">Coach app</a></p>
 </main>
+<div id="modal" hidden></div>

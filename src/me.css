@@ -30,3 +30,6 @@ label.code input{font-size:24px;letter-spacing:.25em;text-transform:uppercase;fo
 .pick span{font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .banner a,.foot a{color:var(--royal-text);font-weight:600}
 .brand small a{color:var(--on-band);font-weight:600}
+.joinbox{background:var(--amber-soft);border-color:var(--amber)}
+tr.meRow td{background:var(--amber-soft)!important;font-weight:700}
+.game .r span{display:block;font-size:12px;letter-spacing:.06em;text-transform:uppercase}
