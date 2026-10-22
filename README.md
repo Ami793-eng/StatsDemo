@@ -5,7 +5,7 @@ A no-login demo of the club stats app. Nothing to set up: no PINs, no server, no
 ## Put it online (2 minutes)
 1. Go to https://app.netlify.com/drop
 2. Drag the **public** folder onto the page.
-3. Netlify gives you a link. Open it on a phone; "Add to Home Screen" makes it look like an app..
+3. Netlify gives you a link. Open it on a phone; "Add to Home Screen" makes it look like an app.
 
 ## What's in it
 | Page | What to try |
