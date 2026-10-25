@@ -96,6 +96,7 @@ const acts={
   editEv:d=>{const m=active();const e=m&&m.events.find(x=>x.id===d.id);if(!e)return;openEdit(m,e,false)},
   handover:()=>{const m=active();if(!m)return;openHandover(m)},
   takeover:()=>{const m=active();if(!m||!canManage(m.teamId))return;if(!armed('takeover'))return;const was=userName(m.scorer);m.scorer=S.me;const f=fixture(m.fixtureId);if(f)f.scorer=S.me;audit(m,`Took over scoring from ${was}`);persist();render();toast('You are now scoring this match')},
+  leaveTo:d=>{const m=active();if(m&&m.events.length===0&&m.clock.period!==0){/* keep it */}S.active=null;keepAwake(false);persist();acts.startFx({id:d.id});acts.startFx({id:d.id})},
   closeMatch:()=>{S.active=null;keepAwake(false);persist();render()},
   startFx:d=>{const f=fixture(d.id);if(!f)return;
     if(isScorer()&&f.status!=='played'&&f.pin&&!(f.pinOk||[]).includes(S.me)){openPin(f);return}
@@ -164,7 +165,7 @@ document.addEventListener('change',async e=>{
   if(!d.chg)return;
   if(d.chg==='team'){const t=team(d.id);
     if(['half','etHalf','onField','sinbinMins'].includes(d.k))t[d.k]=Math.max(1,Number(el.value)||t[d.k]);
-    else if(['arc','shotLoc','leaderboard'].includes(d.k))t[d.k]=el.checked;
+    else if(['arc','shotLoc','leaderboard','ggScores'].includes(d.k))t[d.k]=el.checked;
     else t[d.k]=el.value;
     if(d.k==='assoc'){t.arc=undefined;normTeam(t);const h=gradeHalf(t);if(h)t.half=h}
     if(d.k==='grade'){const h=gradeHalf(t);if(h)t.half=h;t.arc=defaultArc(t);t.tier=defaultTier(t);t.onField=t.tier==='gogames'?11:15}
@@ -230,16 +231,20 @@ function openCard(m,side){
 }
 function openSub(m){
   const t=team(m.teamId);const on=OG.onPitch(m);const sentOff=new Set(m.events.filter(e=>e.type==='red'&&e.side==='us').map(e=>e.pid));
-  let off=null,blood=false;
-  const draw=()=>{const bench=t.players.filter(p=>!on.has(p.id)&&!sentOff.has(p.id)).map(p=>p.id);
-    sheet(`${sheetHead(off?'Player coming on':'Player coming off')}
-      <label class="row" style="gap:10px"><input type="checkbox" id="bloodchk" ${blood?'checked':''}> <span>Blood sub (the player can come back on)</span></label>
-      ${off?`<p class="legend">Off: ${esc(pName(t,off))}</p>${pgrid(t,bench)}`:pgrid(t,[...on])}`,e=>{
-      if(e.target.id==='bloodchk'){blood=e.target.checked;return}
-      const b=e.target.closest('[data-pid]');if(!b||!b.dataset.pid)return;
-      if(!off){off=b.dataset.pid;draw();return}
-      closeSheet();addEvent({side:'us',type:'sub',pid:off,onId:b.dataset.pid,blood})})};
+  const sh=document.getElementById('sheet');let off=null,blood=false;
+  const onPitch=[...on].map(id=>player(t,id)).filter(Boolean).sort((a,b)=>a.num-b.num);
+  const bench=t.players.filter(p=>!on.has(p.id)&&!sentOff.has(p.id)).sort((a,b)=>a.num-b.num);
+  const draw=()=>{if(!off)fsShow({tag:'Sub',tagCls:'t-sub',min:curMin(m),n:2,total:3,q:'Who’s coming off?',body:fsPlayers(onPitch)});
+    else fsShow({tag:'Sub · '+pName(t,off)+' off',tagCls:'t-sub',min:curMin(m),n:3,total:3,q:'Who’s coming on?',back:true,
+      body:`<div class="seg fs-chips"><button data-blood="0" aria-pressed="${!blood}">Normal sub</button><button data-blood="1" aria-pressed="${blood}">Blood sub</button></div>${bench.length?fsPlayers(bench):'<p class="empty">No subs left on the bench.</p>'}`})};
   draw();
+  sh.onclick=ev=>{const g=q=>ev.target.closest(q);
+    if(g('[data-fscancel]')){closeSheet();return}
+    if(g('[data-fsback]')){off=null;draw();return}
+    const b=g('[data-blood]');if(b){blood=b.dataset.blood==='1';draw();return}
+    const p=g('[data-pid]');if(!p||!p.dataset.pid)return;
+    if(!off){off=p.dataset.pid;draw();return}
+    closeSheet();addEvent({side:'us',type:'sub',pid:off,onId:p.dataset.pid,blood})};
 }
 function openNote(m){
   sheet(`${sheetHead('Add note')}
@@ -284,6 +289,17 @@ function openShare(canvas,text){
 }
 
 /* ========== brief v2: tap logs instantly, details after ========== */
+/* Full-screen question: one question per screen, nothing to scroll */
+function fsShow(o){ // o: {tag, tagCls, n, total, q, req, body, foot, back}
+  const sh=document.getElementById('sheet');
+  sh.innerHTML=`<div class="fullsheet" role="dialog" aria-label="${esc(o.q)}"><div class="fs-top">${o.back?'<button class="btn sm" data-fsback="1">‹ Back</button>':'<span></span>'}<div class="fs-title"><span class="fs-type ${o.tagCls||''}">${esc(o.tag)}</span>${o.min?`<span class="fs-min">${o.min}</span>`:''}</div><button class="btn sm" data-fscancel="1">${o.cancelLabel||'Cancel'}</button></div>
+    <div class="fs-step">${o.total>1?`${o.n} of ${o.total} · `:''}<b>${esc(o.q)}</b>${o.req?' <span class="req">required</span>':''}</div>
+    <div class="fs-fill">${o.body}</div><div class="fs-foot">${o.foot||''}</div></div>`;sh.hidden=false;
+}
+const fsBig=(items,attr)=>`<div class="fs-big" style="grid-template-columns:repeat(${items.length>4?3:items.length>2?items.length:items.length},1fr)">${items.map(([k,l,cls])=>`<button class="key ${cls||''}" data-${attr}="${k}">${l}</button>`).join('')}</div>`;
+const fsPlayers=(ps,sel)=>{const cols=ps.length>12?5:4;return `<div class="fs-grid" style="grid-template-columns:repeat(${cols},1fr)">${ps.map(p=>`<button class="fs-p${sel===p.id?' on':''}" data-pid="${p.id}"><b>${p.num}</b><span>${esc(OG.first(p.name))}</span></button>`).join('')}</div>`};
+const curMin=m=>isPlaying(m.clock.period)?OG.minOf(elapsed(m),OG.halfOf(m,m.clock.period)):'';
+
 const PICK_TYPES=['goal','point','two','wide','short','saved','tow','tol','yellow','black','red'];
 const SHOT_TYPES=['goal','point','two','wide','short','saved'];
 acts.tap=d=>{const m=active();if(!canScore(m))return;const side=d.side,type=d.type;
@@ -292,62 +308,78 @@ acts.tap=d=>{const m=active();if(!canScore(m))return;const side=d.side,type=d.ty
   const e=addEvent(Object.assign({side,type},SHOT_TYPES.includes(type)?{src:'play'}:{}));
   if(e&&side==='us'&&PICK_TYPES.includes(type))openAfter(m,e)};
 function openFree(m,side){
-  const t=team(m.teamId);const two=footy(m.code)&&m.arc;let kind='free';
-  const draw=()=>{const res=kind==='45'?[['point',two?'Scored (2 pts)':'Scored'],['wide','Wide'],['short','Dropped short']]:[['goal','Goal'],['point','Point']].concat(two?[['two','2-Point']]:[]).concat([['wide','Wide'],['short','Short']]);
-    sheet(`${sheetHead((side==='us'?S.club:m.opp)+': free')}
-      <div class="seg big">${[['free','Free'],['45',set45(m.code)]].map(([k,l])=>`<button data-kind="${k}" aria-pressed="${kind===k}">${l}</button>`).join('')}</div>
-      <div class="grp"><h3>Result</h3><div class="keys">${res.map(([k,l])=>`<button class="key k-${k}" data-res="${k}">${l}</button>`).join('')}</div></div>`,ev=>{
-      const kd=ev.target.closest('[data-kind]');if(kd){kind=kd.dataset.kind;draw();return}
-      const r=ev.target.closest('[data-res]');if(!r)return;let type=r.dataset.res;if(kind==='45'&&type==='point'&&two)type='two';
-      const o={side,type,src:kind};if(kind==='45'){o.lx=40;o.ly=footy(m.code)?45:65}
-      closeSheet();const e=addEvent(o,kind==='45'?set45(m.code):'Free');if(e&&side==='us')openAfter(m,e)})};
-  draw();
+  const two=footy(m.code)&&m.arc;const us=side==='us';const sh=document.getElementById('sheet');let kind=null;
+  const total=us?5:3;const tag=(us?'':m.opp+' · ')+'Free';
+  const ask=()=>{if(!kind){fsShow({tag,tagCls:'t-free',min:curMin(m),n:2,total,q:'Free or '+set45(m.code)+'?',body:fsBig([['free','Free','set'],['45',set45(m.code),'set']],'kind')});return}
+    const res=kind==='45'?[['point',two?'Scored (2 pts)':'Scored','k-'+(two?'two':'point')],['wide','Wide','k-wide'],['short','Dropped short','k-wide']]:[['goal','Goal','k-goal'],['point','Point','k-point']].concat(two?[['two','2-Point','k-two']]:[]).concat([['wide','Wide','k-wide'],['short','Short','k-wide']]);
+    fsShow({tag:tag+(kind==='45'?' · '+set45(m.code):''),tagCls:'t-free',min:curMin(m),n:3,total,q:'Result?',body:fsBig(res,'res'),back:true})};
+  ask();
+  sh.onclick=ev=>{const g=q=>ev.target.closest(q);
+    if(g('[data-fscancel]')){closeSheet();return}
+    if(g('[data-fsback]')){kind=null;ask();return}
+    const k=g('[data-kind]');if(k){kind=k.dataset.kind;ask();return}
+    const r=g('[data-res]');if(!r)return;let type=r.dataset.res;if(kind==='45'&&type==='point'&&two)type='two';
+    const o={side,type,src:kind};if(kind==='45'){o.lx=40;o.ly=footy(m.code)?45:65}
+    closeSheet();const e=addEvent(o,kind==='45'?set45(m.code):'Free');if(e&&us)openAfter(m,e,null,3)};
 }
 function openCardQ(m,side){
-  const t=team(m.teamId);const rule=OG.sinbinRule(t);
-  sheet(`${sheetHead((side==='us'?S.club:m.opp)+': card')}
-    <div class="keys cardsq">${['yellow'].concat(hasBlack(m.code)?['black']:[]).concat(['red']).map(k=>`<button class="key c-${k}" data-card="${k}">${k[0].toUpperCase()+k.slice(1)}${rule&&rule.card===k?`<small>sin-bin ${rule.secs/60} min</small>`:''}</button>`).join('')}</div>`,ev=>{
-    const c=ev.target.closest('[data-card]');if(!c)return;const card=c.dataset.card;const o={side,type:card};if(rule&&rule.card===card)o.sinbin=rule.secs;
-    closeSheet();const e=addEvent(o);if(e&&side==='us')openAfter(m,e)});
+  const t=team(m.teamId);const rule=OG.sinbinRule(t);const us=side==='us';const sh=document.getElementById('sheet');
+  const cards=['yellow'].concat(hasBlack(m.code)?['black']:[]).concat(['red']);
+  fsShow({tag:(us?'':m.opp+' · ')+'Card',tagCls:'t-card',min:curMin(m),n:2,total:us?3:2,q:'Which card?',
+    body:`<div class="fs-big cardsq" style="grid-template-columns:repeat(${cards.length},1fr)">${cards.map(k=>`<button class="key c-${k}" data-card="${k}">${k[0].toUpperCase()+k.slice(1)}${rule&&rule.card===k?`<small>sin-bin ${rule.secs/60} min</small>`:''}</button>`).join('')}</div>`});
+  sh.onclick=ev=>{const g=q=>ev.target.closest(q);
+    if(g('[data-fscancel]')){closeSheet();return}
+    const c=g('[data-card]');if(!c)return;const card=c.dataset.card;const o={side,type:card};if(rule&&rule.card===card)o.sinbin=rule.secs;
+    closeSheet();const e=addEvent(o);if(e&&us)openAfter(m,e,null,2)};
 }
-// After a tap: who (and for scores, where). Scores need both before the sheet closes.
-function openAfter(m,e){
-  const t=team(m.teamId);const shot=SHOT_TYPES.includes(e.type);const isSc=isScore(e.type);const is45=e.src==='45';
-  const needLoc=isSc&&!is45,needWho=isSc;const onIds=[...OG.onPitch(m)];
+// After a tap, one full screen per step: WHERE (pitch) then WHO (players). Scores need both.
+function openAfter(m,e,startStep,pre){pre=pre||1;
+  const t=team(m.teamId);const shot=SHOT_TYPES.includes(e.type);const isSc=()=>isScore(e.type);const is45=e.src==='45';
+  const steps=shot?['where','who']:['who'];let step=startStep&&steps.includes(startStep)?startStep:steps[0];
+  const needWhere=()=>isSc()&&!is45, needWho=()=>isSc();
+  const onIds=[...OG.onPitch(m)].map(id=>player(t,id)).filter(Boolean).sort((a,b)=>a.num-b.num);
+  const sh=document.getElementById('sheet');
+  const finish=()=>{sh.hidden=true;sh.innerHTML='';sh.onclick=null;syncResult(m);persist();render();if(e.pid)toast(lbl(e.type,m.code)+' · '+pName(t,e.pid))};
+  const next=()=>{const k=steps.indexOf(step);if(k<steps.length-1){step=steps[k+1];draw()}else finish()};
   const draw=()=>{
-    const done=(!needWho||e.pid)&&(!needLoc||hasLoc(e));
-    const where=hasLoc(e)?`${Math.round(distM(e))}m, ${sideOf(e).toLowerCase()}`:'';
-    const head=`<div class="row" style="justify-content:space-between"><h2>${esc(lbl(e.type,m.code))}${e.src&&e.src!=='play'?' · '+esc(srcL(e.src,m.code)):''} <small class="muted">${isPlaying(e.per)?OG.minOf(e.sec,OG.halfOf(m,e.per)):''}</small></h2>
-      <button class="btn sm warn" data-undo="1">Undo</button></div>`;
-    const missChips=['wide','short','saved'].includes(e.type)?`<div class="seg">${[['wide','Wide'],['short','Short'],['saved','Saved / blocked']].map(([k,l])=>`<button data-miss="${k}" aria-pressed="${e.type===k}">${l}</button>`).join('')}</div>`:'';
-    const srcChips=shot&&!is45&&e.src!=='free'?`<div class="seg">${[['play','From play']].concat(footy(m.code)&&e.type!=='goal'?[['mark','Mark']]:[]).concat(e.type==='goal'||e.type==='wide'||e.type==='saved'?[['pen','Penalty']]:[]).map(([k,l])=>`<button data-src="${k}" aria-pressed="${(e.src||'play')===k}">${l}</button>`).join('')}</div>`:'';
-    const sideChips=is45?`<div class="grp"><h3>Where</h3><div class="seg big">${['Left','Centre','Right'].map(k=>`<button data-s45="${k}" aria-pressed="${hasLoc(e)&&sideOf(e)===k}">${k}</button>`).join('')}</div></div>`:'';
-    const pitch=shot&&!is45?`<div class="grp"><h3>Where${needLoc?' <span class="req">required</span>':' (optional)'}${where?' · '+esc(where):''}</h3><div class="pitchbox">${pitchSVG({code:m.code,arc:m.arc,mark:hasLoc(e)?e:null,id:'afterpitch'})}</div>${isSc&&m.arc&&footy(m.code)?'<p class="legend">Outside the arc counts 2 points automatically.</p>':''}</div>`:'';
-    const who=`<div class="grp"><h3>Who${needWho?' <span class="req">required</span>':' (optional)'}</h3>${pgrid(t,onIds,new Set([e.pid]))}</div>`;
-    const foot=done?`<div class="row"><button class="btn pri" data-done="1">Done</button>${needWho?'':'<button class="btn" data-done="1">Skip</button>'}</div>`
-      :`<p class="legend">${needWho&&!e.pid&&needLoc&&!hasLoc(e)?'Tap where on the pitch, then who scored.':needLoc&&!hasLoc(e)?'Tap where on the pitch it was scored from.':'Pick who scored.'}</p>${needWho?'':'<div class="row"><button class="btn" data-done="1">Skip</button></div>'}`;
-    const sh=document.getElementById('sheet');
-    sh.innerHTML=`<div class="sheet-bg"><div class="sheet" role="dialog" aria-label="Details">${head}${missChips}${srcChips}${pitch}${sideChips}${who}${foot}</div></div>`;sh.hidden=false;
+    const n=steps.indexOf(step)+1;const minute=isPlaying(e.per)?OG.minOf(e.sec,OG.halfOf(m,e.per)):'';
+    const title=`<span class="fs-type t-${e.type}">${esc(lbl(e.type,m.code))}${e.src&&e.src!=='play'?' · '+esc(srcL(e.src,m.code)):''}</span><span class="fs-min">${minute}</span>`;
+    const top=`<div class="fs-top">${steps.length>1&&n>1?'<button class="btn sm" data-back="1">‹ Back</button>':'<span></span>'}<div class="fs-title">${title}</div><button class="btn sm warn" data-undo="1">Undo</button></div>
+      <div class="fs-step">${`${n+pre} of ${steps.length+pre} · `}<b>${step==='where'?'Where?':'Who?'}</b>${(step==='where'?needWhere():needWho())?' <span class="req">required</span>':''}</div>`;
+    let body='',foot='';
+    if(step==='where'){
+      if(is45){body=`<div class="fs-fill"><div class="fs-sides">${['Left','Centre','Right'].map(k=>`<button class="key big" data-s45="${k}">${k}</button>`).join('')}</div><p class="legend center">Which side of the ${set45(m.code)} line?</p></div>`}
+      else{
+        const chips=[['play','Play']].concat(footy(m.code)&&e.type!=='goal'?[['mark','Mark']]:[]).concat(['goal','wide','saved'].includes(e.type)?[['pen','Penalty']]:[]);
+        const miss=['wide','short','saved'].includes(e.type)?`<div class="seg fs-chips">${[['wide','Wide'],['short','Short'],['saved','Saved']].map(([k,l])=>`<button data-miss="${k}" aria-pressed="${e.type===k}">${l}</button>`).join('')}</div>`:'';
+        const src=e.src!=='free'?`<div class="seg fs-chips">${chips.map(([k,l])=>`<button data-src="${k}" aria-pressed="${(e.src||'play')===k}">${l}</button>`).join('')}</div>`:'';
+        body=`${miss}${src}<div class="fs-fill fs-pitch">${pitchSVG({code:m.code,arc:m.arc,mark:hasLoc(e)?e:null,id:'afterpitch'})}</div><p class="legend center">Tap where it was taken from${isSc()&&m.arc&&footy(m.code)?' · outside the arc counts 2':''}</p>`}
+      foot=needWhere()?'':`<button class="btn" data-next="1">Skip</button>`;
+    }else{
+      const cols=onIds.length>12?5:4;
+      body=`<div class="fs-fill"><div class="fs-grid" style="grid-template-columns:repeat(${cols},1fr)">${onIds.map(p=>`<button class="fs-p${e.pid===p.id?' on':''}" data-pid="${p.id}"><b>${p.num}</b><span>${esc(OG.first(p.name))}</span></button>`).join('')}</div></div>`;
+      foot=needWho()?'':`<button class="btn" data-next="1">Skip</button>`;
+    }
+    sh.innerHTML=`<div class="fullsheet" role="dialog" aria-label="${esc(lbl(e.type,m.code))} details">${top}${body}<div class="fs-foot">${foot}</div></div>`;sh.hidden=false;
     const svg=document.getElementById('afterpitch');
-    if(svg)svg.addEventListener('click',ev=>{const r=svg.getBoundingClientRect();if(!r.width)return;const D=DEPTH(m.code);
-      e.lx=Math.round(Math.max(0,Math.min(PW,(ev.clientX-r.left)/r.width*PW))*2)/2;e.ly=Math.round(Math.max(0,Math.min(D,(ev.clientY-r.top)/r.height*D))*2)/2;
+    if(svg)svg.addEventListener('click',ev=>{let x,y;try{const pt=svg.createSVGPoint();pt.x=ev.clientX;pt.y=ev.clientY;const q=pt.matrixTransform(svg.getScreenCTM().inverse());x=q.x/4;y=q.y/4}catch(err){const r=svg.getBoundingClientRect();x=(ev.clientX-r.left)/r.width*PW;y=(ev.clientY-r.top)/r.height*DEPTH(m.code)}
+      e.lx=Math.round(Math.max(0,Math.min(PW,x))*2)/2;e.ly=Math.round(Math.max(0,Math.min(DEPTH(m.code),y))*2)/2;
       if(m.arc&&footy(m.code)&&e.src!=='pen'){if(e.type==='point'&&outsideArc(e,m.code,m.arc))e.type='two';else if(e.type==='two'&&!outsideArc(e,m.code,m.arc))e.type='point'}
-      syncResult(m);persist();draw()});
+      persist();draw();setTimeout(next,250)});
   };
   draw();
-  document.getElementById('sheet').onclick=ev=>{
-    const g=ev.target.closest.bind(ev.target);
-    if(g('[data-undo]')){m.events=m.events.filter(x=>x!==e);audit(m,'Undid '+describe(m,e));closeSheet();syncResult(m);persist();render();toast('Undone');return}
+  sh.onclick=ev=>{const g=s=>ev.target.closest(s);
+    if(g('[data-undo]')){m.events=m.events.filter(x=>x!==e);audit(m,'Undid '+describe(m,e));sh.hidden=true;sh.innerHTML='';sh.onclick=null;syncResult(m);persist();render();toast('Undone');return}
+    if(g('[data-back]')){step=steps[Math.max(0,steps.indexOf(step)-1)];draw();return}
+    if(g('[data-next]')){next();return}
     const mi=g('[data-miss]');if(mi){e.type=mi.dataset.miss;persist();draw();return}
-    const sr=g('[data-src]');if(sr){e.src=sr.dataset.src;if(e.src==='pen'){e.lx=40;e.ly=11;if(e.type==='two')e.type='point'}persist();draw();return}
-    const s4=g('[data-s45]');if(s4){e.lx=s4.dataset.s45==='Left'?14:s4.dataset.s45==='Right'?66:40;e.ly=footy(m.code)?45:65;persist();draw();return}
-    const p=g('[data-pid]');if(p&&p.dataset.pid){e.pid=p.dataset.pid;persist();
-      if((!needLoc||hasLoc(e))){closeSheet();render();toast(lbl(e.type,m.code)+' · '+pName(t,e.pid));return}draw();return}
-    if(g('[data-done]')){if(needWho&&!e.pid)return;if(needLoc&&!hasLoc(e))return;closeSheet();render()}
+    const sr=g('[data-src]');if(sr){e.src=sr.dataset.src;if(e.src==='pen'){e.lx=40;e.ly=11;if(e.type==='two')e.type='point';persist();next();return}persist();draw();return}
+    const s4=g('[data-s45]');if(s4){e.lx=s4.dataset.s45==='Left'?14:s4.dataset.s45==='Right'?66:40;e.ly=footy(m.code)?45:65;persist();next();return}
+    const p=g('[data-pid]');if(p&&p.dataset.pid){e.pid=p.dataset.pid;persist();draw();setTimeout(next,150);return}
   };
 }
 // re-open details for a logged event (Add / Change player)
-acts.addPlayer=d=>{const m=active();const e=m&&m.events.find(x=>x.id===d.id);if(!e)return;if(canScore(m))openAfter(m,e);else openEdit(m,e,true)};
+acts.addPlayer=d=>{const m=active();const e=m&&m.events.find(x=>x.id===d.id);if(!e)return;if(canScore(m))openAfter(m,e,'who');else openEdit(m,e,true)};
 
 function openPin(f,matchId){
   sheet(`${sheetHead('Match PIN')}

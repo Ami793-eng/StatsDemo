@@ -41,7 +41,7 @@ function lastBar(m,t){
     <span class="row">${e.side==='us'&&PICK_TYPES.includes(e.type)?`<button class="btn sm" data-act="addPlayer" data-id="${e.id}">${e.pid?'Change player':'Add player'}</button>`:''}<button class="btn sm amb" data-act="undo">Undo</button></span></div>`;
 }
 function vScorer(m){
-  const t=team(m.teamId),c=m.clock,two=footy(m.code)&&m.arc,ko=KO(m.code),gg=OG.tierOf(t)==='gogames';
+  const t=team(m.teamId),c=m.clock,two=footy(m.code)&&m.arc,ko=KO(m.code),gg=OG.tierOf(t)==='gogames';const ggPriv=gg&&t.ggScores;
   const runLbl=c.period===0?'Throw-in':c.running?'Time off':'Time on';
   const nextLbl=c.period===0?'Start 1st half':c.period===1?(ui.armed==='next'?'Confirm half time':'Half time'):c.period==='HT'?'Start 2nd half':c.period===2?(ui.armed==='next'?'Confirm full time':'Full time'):c.period===3?(ui.armed==='next'?'Confirm ET half time':'ET half time'):c.period==='ETH'?'Start ET 2nd half':c.period===4?(ui.armed==='next'?'Confirm end of ET':'End extra time'):'';
   let ctrl;
@@ -61,8 +61,8 @@ function vScorer(m){
     <div id="alertbar" class="alertbar" hidden></div>${ctrl}</section>
   ${pre}
   ${sbPanel(m,t)}
-  ${gg?`<section class="panel"><p class="ggnote dark">Go Games: no scores are kept. Track subs (for minutes) and notes only.</p></section>`:`<section class="scorepanel">${col('us')}${col('them')}</section>
-  <p class="legend center">Each tap logs at once with the match time. For ${esc(S.club)} the player picker opens after; skip it if unsure. KO = ${ko}, TO = turnover.</p>`}
+  ${gg&&!t.ggScores?`<section class="panel ggpanel"><h3>Go Games: no scoring</h3><p class="legend">Go Games are non-competitive under GAA policy, so this screen only tracks subs (for minutes played) and notes. ${isAdmin()?'You can let coaches keep scores privately under Admin → Teams & players.':''}</p>${(()=>{const alt=S.fixtures.find(f=>f.status==='upcoming'&&OG.tierOf(team(f.teamId))!=='gogames'&&canManage(f.teamId));return alt?`<div class="row"><button class="btn pri" data-act="leaveTo" data-id="${alt.id}">Score ${esc(team(alt.teamId).name)} v ${esc(alt.opp)} instead</button></div>`:''})()}</section>`:`<section class="scorepanel">${col('us')}${col('them')}</section>
+  ${ggPriv?'<p class="legend center"><b>Private Go Games scores:</b> only coaches see these; they never appear on public pages.</p>':''}<p class="legend center">Each tap logs at once with the match time. For ${esc(S.club)} the player picker opens after; skip it if unsure. KO = ${ko}, TO = turnover.</p>`}
   ${lastBar(m,t)}
   <div class="keys two subnote"><button class="key sub" data-act="sub">Sub</button><button class="key note" data-act="note">Note</button></div>
   <section class="panel"><div class="ph"><h3>Timeline</h3><span class="legend">Tap an event to edit or undo it</span></div>${timeline(m,t,15,true)}</section>
@@ -179,7 +179,7 @@ function fxCard(f,compact){
       <button class="btn sm warn${A('dfx'+f.id)}" data-act="delFx" data-id="${f.id}">${ui.armed==='dfx'+f.id?'Tap to delete':'Delete'}</button></div></div></div>`;
   }
   const res=!gg&&f.result&&f.status==='played'?(()=>{const u=f.result.us,th=f.result.them;const k=u.t>th.t?'w':u.t<th.t?'l':'d';return `<span class="res">${fmtS(u)} (${u.t}) – ${fmtS(th)} (${th.t})</span> <span class="chip ${k}">${k==='w'?'Won':k==='l'?'Lost':'Draw'}</span>`})():'';
-  const btn=f.status==='cancelled'?'':f.status==='played'?`<button class="btn sm" data-act="startFx" data-id="${f.id}">Open match</button>`:f.status==='live'?`<button class="btn sm pri" data-act="startFx" data-id="${f.id}">Open live match</button>`:(f.scorer===S.me||manage)?`<button class="btn sm pri${A('start'+f.id)}" data-act="startFx" data-id="${f.id}">${ui.armed==='start'+f.id?'Tap again to score it':'Score this match'}</button>`:'';
+  const btn=f.status==='cancelled'?'':f.status==='played'?`<button class="btn sm" data-act="startFx" data-id="${f.id}">Open match</button>`:f.status==='live'?`<button class="btn sm pri" data-act="startFx" data-id="${f.id}">Open live match</button>`:(f.scorer===S.me||manage)?`<button class="btn sm pri${A('start'+f.id)}" data-act="startFx" data-id="${f.id}">${ui.armed==='start'+f.id?'Tap again to open it':gg&&!(t&&t.ggScores)?'Track minutes (Go Games)':'Score this match'}</button>`:'';
   const moved=f.prev?`<span class="chip d">Moved from ${esc(new Date(f.prev.date+'T12:00').toLocaleDateString('en-IE',{day:'numeric',month:'short'}))}${f.prev.time&&f.prev.time!==f.time?' '+esc(f.prev.time):''}</span>`:'';
   return `<div class="fx${f.status==='cancelled'?' cancelled':''}"><div class="dt"><span>${d.toLocaleDateString('en-IE',{weekday:'short'})}</span><b>${d.getDate()}</b><span>${d.toLocaleDateString('en-IE',{month:'short'})}</span></div>
     <div class="body"><div class="opp">${crestImg(f.opp)}<span>${esc(t?t.name:'?')} v ${esc(f.opp)}</span></div>
@@ -362,6 +362,7 @@ function vAdmin(){
       <label class="f">League table link<input id="t-table" value="${esc(t.tableUrl||'')}" data-chg="team" data-id="${t.id}" data-k="tableUrl"></label></div>
     ${footy(t.code)?`<label class="row" style="gap:10px"><input id="t-arc" type="checkbox" ${t.arc?'checked':''} data-chg="team" data-id="${t.id}" data-k="arc"> <span>2-point arc in use</span></label>`:''}
     <label class="row" style="gap:10px"><input id="t-loc" type="checkbox" ${t.shotLoc?'checked':''} data-chg="team" data-id="${t.id}" data-k="shotLoc"> <span>Offer shot location on the scoring screen (optional tap)</span></label>
+    ${OG.tierOf(t)==='gogames'?`<label class="row" style="gap:10px"><input id="t-gg" type="checkbox" ${t.ggScores?'checked':''} data-chg="team" data-id="${t.id}" data-k="ggScores"> <span>Let coaches keep Go Games scores privately (never shown publicly)</span></label>`:''}
     <label class="row" style="gap:10px"><input id="t-lb" type="checkbox" ${t.leaderboard?'checked':''} data-chg="team" data-id="${t.id}" data-k="leaderboard"> <span>Players can see the team leaderboard (otherwise only their own stats)</span></label>
     <p class="legend">Coach: ${esc(userName(t.coach))}. GAA sin-bin: black card, 10 minutes. LGFA: yellow card from U14 up (10 min with 30-minute halves, 5 min with shorter halves, none up to U13).</p>
   </section>
