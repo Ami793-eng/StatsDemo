@@ -1,10 +1,10 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#132a86"><meta name="robots" content="noindex">
-<link rel="icon" type="image/png" href="favicon.png"><link rel="apple-touch-icon" href="apple-touch-icon.png"><link rel="manifest" href="manifest.webmanifest"><meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="icon" type="image/png" href="favicon.png"><link rel="apple-touch-icon" href="apple-touch-icon.png"><link rel="manifest" href="app.webmanifest"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Gaels Beo">
 <title>Gaels Beo</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&display=swap">
 <style>html{-webkit-text-size-adjust:100%}body{margin:0}[hidden]{display:none!important}img{max-width:100%}:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
-/* Owenmore Gaels shared theme: royal blue band + amber accents. Layout: blue header band with badge, one working column of panels. */
+/* Shared theme (default club colours: royal blue band + amber accents; club colours are a setting). Layout: coloured header band with badge, one working column of panels. */
 :root{
   --bg:#f1f3fa; --surface:#ffffff; --surface2:#ecf0f9; --line:#d3d9ea; --fg:#0f1a3a; --muted:#566079;
   --royal:#1f3fbf; --royal-2:#132a86; --royal-text:#1f3fbf; --royal-soft:#e3e9fb;
@@ -154,6 +154,24 @@ td .pc{color:var(--muted);font-size:12px;margin-left:4px}
 .pkey .m{background:none!important;border:0!important;box-shadow:none!important;position:relative}
 .pkey .m::before,.pkey .m::after,.dotk.m::before,.dotk.m::after{content:"";position:absolute;left:50%;top:50%;width:13px;height:3px;background:var(--miss);border-radius:2px}
 .pkey .m::before,.dotk.m::before{transform:translate(-50%,-50%) rotate(45deg)} .pkey .m::after,.dotk.m::after{transform:translate(-50%,-50%) rotate(-45deg)}
+
+/* Install app (pwa.js): header button + one-time iPhone tip */
+.instbtn{background:var(--amber)!important;border-color:var(--amber)!important;color:var(--amber-ink)!important;flex:none;margin-left:auto}
+.instbtn + .bellbtn{margin-left:0}
+.iostip{position:fixed;left:0;right:0;bottom:0;z-index:50;padding:0 max(16px,env(safe-area-inset-left,0px)) calc(12px + env(safe-area-inset-bottom,0px))}
+.iostip-in{max-width:520px;margin:0 auto;display:flex;align-items:center;gap:10px;background:var(--surface);color:var(--fg);border:1px solid var(--line);border-top:4px solid var(--amber);border-radius:var(--r);padding:12px 14px;box-shadow:0 8px 28px rgba(0,0,0,.28)}
+.iostip-in p{margin:0;flex:1;font-size:14px}
+.iostip-ic{width:26px;height:26px;flex:none;color:var(--royal-text)}
+
+/* Sign in (signin.js) */
+.signbtn{background:rgba(255,255,255,.14)!important;border-color:rgba(255,255,255,.4)!important;color:#fff!important;flex:none}
+.field{width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:10px;background:var(--surface);font-size:16px}
+.pinin{font-family:var(--display);font-size:32px;letter-spacing:.4em;text-align:center}
+.silist{display:flex;flex-direction:column;gap:8px}
+.sirow{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;padding:12px 14px}
+.sirow span{font-weight:400;color:var(--muted);font-size:13px}
+.sierr{margin:0;color:var(--bad);font-size:14px;min-height:1em}
+.sierr:empty{display:none}
 /* Coach app components */
 .board{background:linear-gradient(140deg,var(--royal) 0%,var(--royal-2) 100%);color:var(--on-band);border-radius:var(--r);padding:14px;display:flex;flex-direction:column;gap:12px;border-bottom:4px solid var(--amber)}
 .sb{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center;text-align:center}
@@ -432,10 +450,10 @@ nav button{font-size:clamp(14px,3.9vw,17px);letter-spacing:.05em;padding-inline:
 </style>
 </head><body>
 <header class="top"><div class="top-in">
-  <div class="brand"><div class="badge" id="badge" aria-hidden="true"><img src="badge.png" alt=""></div><div class="bt"><h1 id="clubname">Owenmore Gaels</h1><small><span class="beo">Gaels Beo</span><label for="who" class="wholbl">· Viewing as</label><select id="who" class="who" aria-label="Viewing as"></select></small></div></div>
+  <div class="brand"><div class="badge" id="badge" aria-hidden="true"><img src="badge.png" alt=""></div><div class="bt"><h1 id="clubname"></h1><small><span class="beo">Gaels Beo</span><label for="who" class="wholbl">· Viewing as</label><select id="who" class="who" aria-label="Viewing as"></select></small></div></div>
   <nav id="nav" hidden></nav>
 </div></header>
-<div class="demobar"><div class="demo-in"><b>Demo</b> · real 2026 results, invented players · <a href="live.html">Public page</a> · <a href="me.html">Player page</a></div></div>
+<div class="demobar"><div class="demo-in"><b>Demo</b> · real 2026 results, invented players · <a href="live.html">Live scores</a> · <a href="#" id="signout">Sign out</a></div></div>
 <main id="app"></main>
 <div id="sheet" hidden></div>
 <div id="toast" class="toast" hidden></div>
@@ -1096,7 +1114,7 @@ document.addEventListener('change',async e=>{
     normTeam(t);persist();render()}
   if(d.chg==='pl'){const t=team(d.id),p=player(t,d.pid);if(!p)return;if(d.k==='num')p.num=Number(el.value)||p.num;else p[d.k]=el.value.trim();t.players.sort((a,b)=>a.num-b.num);persist()}
   if(d.chg==='mhalf'){const m=active();if(!canScore(m))return;m.half=Math.max(1,Number(el.value)||m.half);persist();render()}
-  if(d.chg==='club'){S.club=el.value.trim()||'Owenmore Gaels';persist();render()}
+  if(d.chg==='club'){S.club=el.value.trim()||S.club;persist();render()}
   if(d.chg==='setting'){S.settings[d.k]=el.type==='checkbox'?el.checked:el.value.trim();persist();render();toast('Saved')}
   if(d.chg==='mapPl'){ui.mapPl=el.value;render()}
   if(d.chg==='logo'){const f=el.files&&el.files[0];if(!f)return;const fr=new FileReader();fr.onload=()=>{const img=new Image();img.onload=()=>{const k=Math.min(1,256/Math.max(img.width,img.height));const c=document.createElement('canvas');c.width=Math.round(img.width*k);c.height=Math.round(img.height*k);c.getContext('2d').drawImage(img,0,0,c.width,c.height);S.logo=c.toDataURL('image/png');persist();render();toast('Badge updated')};img.src=fr.result};fr.readAsDataURL(f)}
@@ -1711,12 +1729,146 @@ function render(){
 }
 (function boot(){
   S=loadDemo();S.teams.forEach(normTeam);
+  // Arriving from "Sign in" on the live page: open as that person (demo stand-in for a real login)
+  try{const q=new URLSearchParams(location.search),as=q.get('as'),pin=q.get('pin');
+    if(as&&S.users.some(u=>u.id===as)){S.me=as;S.active=null;S.tab=isScorer()?'match':'stats';ui.statsTeam=null;
+      if(pin){const f=S.fixtures.find(x=>x.pin===pin&&x.scorer===as&&!x.pinExpired);if(f&&!(f.pinOk=f.pinOk||[]).includes(as))f.pinOk.push(as)}
+      persist();history.replaceState(null,'',location.pathname)}}catch(e){}
   if(S.active&&!active())S.active=null;
   render();
   const m=active();if(m&&m.clock.running&&canScore(m))keepAwake(true);
   document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'){const m=active();if(m&&m.clock.running&&canScore(m)){wake=null;keepAwake(true)}}});
   setInterval(()=>{if(S.tab==='live'&&document.visibilityState==='visible'&&document.getElementById('sheet').hidden){const keep={me:S.me,tab:S.tab};try{const f=JSON.parse(localStorage.getItem(DEMO_KEY)||'null');if(f&&f.v===S.v)S=Object.assign(f,keep)}catch(e){}render()}},5000);
-  try{if('serviceWorker' in navigator&&location.protocol==='https:'&&window.top===window.self)navigator.serviceWorker.register('sw.js').catch(()=>{})}catch(e){}
+  
 })();
+/* ========== one app, one front door ==========
+   The app always opens on the public live page: no login needed to follow scores.
+   "Sign in" offers the other roles and opens the right screen:
+     Coach / manager  -> sign-in link by email or text (demo: pick the coach)  -> coach app
+     Scorer           -> match PIN                                             -> scoring screen
+     Club admin       -> sign-in link (demo: straight in)                      -> admin
+     Player / parent  -> private code                                          -> my stats
+   The last sign-in is remembered on the phone so the header button goes straight back to it. */
+const ROLE_KEY='gb-signin';
+const Role={
+  get(){try{return JSON.parse(localStorage.getItem(ROLE_KEY)||'null')}catch(e){return null}},
+  set(v){try{v?localStorage.setItem(ROLE_KEY,JSON.stringify(v)):localStorage.removeItem(ROLE_KEY)}catch(e){}},
+  go(r){Role.set(r);location.href=r.page==='me'?'me.html':'index.html?as='+encodeURIComponent(r.as)+(r.pin?'&pin='+encodeURIComponent(r.pin):'')},
+  out(){Role.set(null);location.href='live.html'}
+};
+function signinButton(){
+  const host=document.querySelector('.top .brand');if(!host||document.getElementById('signin'))return;
+  const r=Role.get();
+  const b=document.createElement('button');b.id='signin';b.type='button';b.className='btn sm signbtn';
+  b.textContent=r?(r.page==='me'?'My stats':r.label||'My app'):'Sign in';
+  b.onclick=()=>r?Role.go(r):signinSheet();
+  host.appendChild(b);
+}
+function signinSheet(step){
+  const m=document.getElementById('modal');if(!m)return;
+  const S=loadDemo();
+  const head=(t,back)=>`<div class="row" style="justify-content:space-between;align-items:center">${back?'<button class="btn sm" data-si="home">‹ Back</button>':''}<h2 style="margin:0;flex:1">${t}</h2><button class="btn sm" data-close="1">Close</button></div>`;
+  let h;
+  if(step==='coach'||step==='admin'){
+    const users=S.users.filter(u=>u.role===step);
+    h=head(step==='coach'?'Coach or manager':'Club admin',1)+
+      `<p class="legend">Enter the email or mobile number the club has for you. We’ll send a one-tap sign-in link, no password.</p>
+       <input class="field" type="email" placeholder="Email or mobile" autocomplete="email" aria-label="Email or mobile">
+       <p class="legend"><b>Demo:</b> no link is sent. Pick who you are:</p>
+       <div class="silist">${users.map(u=>`<button class="btn" data-si="pick" data-as="${u.id}">${esc(u.label)}</button>`).join('')}</div>`;
+  }else if(step==='scorer'){
+    const demo=S.fixtures.filter(f=>f.pin&&!f.pinExpired&&f.status!=='played');
+    h=head('Scorer',1)+
+      `<p class="legend">Enter the 4-digit PIN for your match. The coach or PRO gives it to you. It works for that match only and expires at full time.</p>
+       <input class="field pinin" id="si-pin" inputmode="numeric" pattern="[0-9]*" maxlength="4" placeholder="PIN" aria-label="Match PIN" autocomplete="one-time-code">
+       <p class="sierr" id="si-err" role="alert"></p>
+       <button class="btn amb" data-si="pin">Start scoring</button>
+       ${demo.length?`<p class="legend"><b>Demo PINs:</b> ${demo.slice(0,3).map(f=>`${esc(f.opp)} <b>${esc(f.pin)}</b>`).join(' · ')}</p>`:''}`;
+  }else{
+    h=head('Sign in')+
+      `<p class="legend">You don’t need to sign in to follow live scores. Sign in for your role:</p>
+       <div class="silist">
+         <button class="btn sirow" data-si="coach"><b>Coach or manager</b><span>Team sheet, minutes, stats for your team</span></button>
+         <button class="btn sirow" data-si="scorer"><b>Scorer</b><span>Score a match with its PIN</span></button>
+         <button class="btn sirow" data-si="me"><b>Player or parent</b><span>Team stats and match reports</span></button>
+         <button class="btn sirow" data-si="admin"><b>Club admin</b><span>Teams, squads and club settings</span></button>
+       </div>`;
+  }
+  m.innerHTML=`<div class="sheet-bg" id="si-bg"><div class="sheet" role="dialog" aria-modal="true" aria-label="Sign in">${h}</div></div>`;
+  m.hidden=false;
+  const pin=document.getElementById('si-pin');if(pin){pin.focus();pin.onkeydown=e=>{if(e.key==='Enter')m.querySelector('[data-si="pin"]').click()}}
+  m.onclick=e=>{
+    if(e.target.id==='si-bg'||e.target.closest('[data-close]')){m.hidden=true;m.innerHTML='';return}
+    const b=e.target.closest('[data-si]');if(!b)return;
+    const v=b.dataset.si;
+    if(v==='home'||v==='coach'||v==='admin'||v==='scorer'){signinSheet(v==='home'?null:v);return}
+    if(v==='me'){Role.go({page:'me',label:'My stats'});return}
+    if(v==='pick'){const u=S.users.find(x=>x.id===b.dataset.as);Role.go({page:'app',as:u.id,label:u.role==='admin'?'Club admin':'Coach app'});return}
+    if(v==='pin'){
+      const p=(pin.value||'').trim();const f=S.fixtures.find(x=>x.pin&&x.pin===p&&!x.pinExpired&&x.status!=='played');
+      if(!f){document.getElementById('si-err').textContent='That PIN doesn’t match an upcoming match. Check it with your coach.';return}
+      Role.go({page:'app',as:f.scorer,pin:p,label:'Scoring'});
+    }
+  };
+}
+/* ========== installable app (PWA) ==========
+   Shared by every page. One manifest for the whole app: it installs once and opens on the live page.
+
+   - Android/Chrome/Edge: an "Install app" button appears in the header when the browser offers its
+     install prompt (beforeinstallprompt), and disappears once installed.
+   - iPhone/iPad Safari: no install prompt exists, so a one-time tip says "Tap Share, then Add to Home Screen".
+   - Already running from the home screen: nothing is shown. */
+(function(){
+  const inFrame=(()=>{try{return window.top!==window.self}catch(e){return true}})();
+  const standalone=()=>{try{return matchMedia('(display-mode: standalone)').matches||matchMedia('(display-mode: fullscreen)').matches||navigator.standalone===true}catch(e){return false}};
+  const page=(location.pathname.split('/').pop()||'index').replace(/\.html$/,'')||'index';
+  const store={get(k){try{return localStorage.getItem(k)}catch(e){return null}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
+  const IOS_KEY='pwa-ios-tip-'+page;
+  let deferred=null;
+
+  function button(){
+    let b=document.getElementById('installbtn');
+    if(b)return b;
+    const host=document.querySelector('.top .brand');if(!host)return null;
+    b=document.createElement('button');b.id='installbtn';b.type='button';b.className='btn sm instbtn';b.hidden=true;
+    b.textContent='Install app';b.setAttribute('aria-label','Install this app on your home screen');
+    b.addEventListener('click',async()=>{
+      if(!deferred)return;
+      b.disabled=true;
+      try{deferred.prompt();await deferred.userChoice}catch(e){}
+      deferred=null;b.disabled=false;b.hidden=true; // the prompt can only be used once; Chrome fires a fresh event if offered again
+    });
+    host.appendChild(b);
+    return b;
+  }
+  function hideAll(){const b=document.getElementById('installbtn');if(b)b.hidden=true;const t=document.getElementById('iostip');if(t)t.remove()}
+
+  window.addEventListener('beforeinstallprompt',e=>{
+    e.preventDefault(); // use our own button instead of Chrome's mini-infobar
+    if(standalone()||inFrame)return;
+    deferred=e;const b=button();if(b)b.hidden=false;
+  });
+  window.addEventListener('appinstalled',()=>{deferred=null;hideAll()});
+  try{matchMedia('(display-mode: standalone)').addEventListener('change',ev=>{if(ev.matches)hideAll()})}catch(e){}
+
+  function iosTip(){
+    const ua=navigator.userAgent||'';
+    const ios=/iPhone|iPad|iPod/.test(ua)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+    if(!ios||standalone()||inFrame||store.get(IOS_KEY))return;
+    // Only Safari can add to the home screen on older iOS; other iOS browsers get the same tip from iOS 16.4 on.
+    store.set(IOS_KEY,'1'); // one-time: never shown again on this page, even if not dismissed
+    const d=document.createElement('div');d.id='iostip';d.className='iostip';d.setAttribute('role','note');
+    d.innerHTML='<div class="iostip-in"><svg class="iostip-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12M7.5 7.5 12 3l4.5 4.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M6 11H5v10h14V11h-1" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>'+
+      '<p><b>Install this app:</b> tap <b>Share</b>, then <b>Add to Home Screen</b>.</p><button type="button" class="btn sm" aria-label="Close tip">OK</button></div>';
+    d.querySelector('button').addEventListener('click',()=>d.remove());
+    document.body.appendChild(d);
+  }
+
+  if(!standalone()&&!inFrame){
+    if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>{button();iosTip()});else{button();iosTip()}
+  }
+  try{if('serviceWorker' in navigator&&(location.protocol==='https:'||location.hostname==='localhost')&&!inFrame)navigator.serviceWorker.register('sw.js').catch(()=>{})}catch(e){}
+})();
+document.addEventListener('click',e=>{if(e.target.closest('#signout')){e.preventDefault();Role.out()}});
 </script>
 </body></html>

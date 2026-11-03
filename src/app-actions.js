@@ -172,7 +172,7 @@ document.addEventListener('change',async e=>{
     normTeam(t);persist();render()}
   if(d.chg==='pl'){const t=team(d.id),p=player(t,d.pid);if(!p)return;if(d.k==='num')p.num=Number(el.value)||p.num;else p[d.k]=el.value.trim();t.players.sort((a,b)=>a.num-b.num);persist()}
   if(d.chg==='mhalf'){const m=active();if(!canScore(m))return;m.half=Math.max(1,Number(el.value)||m.half);persist();render()}
-  if(d.chg==='club'){S.club=el.value.trim()||'Owenmore Gaels';persist();render()}
+  if(d.chg==='club'){S.club=el.value.trim()||S.club;persist();render()}
   if(d.chg==='setting'){S.settings[d.k]=el.type==='checkbox'?el.checked:el.value.trim();persist();render();toast('Saved')}
   if(d.chg==='mapPl'){ui.mapPl=el.value;render()}
   if(d.chg==='logo'){const f=el.files&&el.files[0];if(!f)return;const fr=new FileReader();fr.onload=()=>{const img=new Image();img.onload=()=>{const k=Math.min(1,256/Math.max(img.width,img.height));const c=document.createElement('canvas');c.width=Math.round(img.width*k);c.height=Math.round(img.height*k);c.getContext('2d').drawImage(img,0,0,c.width,c.height);S.logo=c.toDataURL('image/png');persist();render();toast('Badge updated')};img.src=fr.result};fr.readAsDataURL(f)}
