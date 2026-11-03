@@ -29,10 +29,8 @@ manifest(){ # file id name short_name description start scope
 }
 JSON
 }
-# Each installable page gets its own manifest, id and start page so they install as separate apps.
-manifest app.webmanifest  /index.html "$APP_NAME"        "$APP_NAME"  "Live match scoring and stats for your club"   index.html ./
-manifest live.webmanifest /live.html  "$APP_NAME Live"   "Live scores" "Live scores, fixtures and results"           live.html  ./live
-manifest me.webmanifest   /me.html    "$APP_NAME Player" "My stats"    "Your team's stats and match reports"        me.html    ./me
+# One installable app. It opens on the public live page (no login); "Sign in" leads to coach, scorer, admin or player screens.
+manifest app.webmanifest /live.html "$APP_NAME" "$APP_NAME" "Live scores, match scoring and stats for your club" live.html ./
 page(){ # name title css-files body-file js-files manifest
   name=$1; title=$2; css=$3; body=$4; js=$5; mf=$6
   {
@@ -45,7 +43,7 @@ page(){ # name title css-files body-file js-files manifest
   } > "preview/$name.html"
   {
     echo '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#132a86"><meta name="robots" content="noindex">'
-    echo "<link rel=\"icon\" type=\"image/png\" href=\"favicon.png\"><link rel=\"apple-touch-icon\" href=\"apple-touch-icon.png\"><link rel=\"manifest\" href=\"$mf\"><meta name=\"apple-mobile-web-app-capable\" content=\"yes\"><meta name=\"mobile-web-app-capable\" content=\"yes\"><meta name=\"apple-mobile-web-app-status-bar-style\" content=\"black-translucent\"><meta name=\"apple-mobile-web-app-title\" content=\"$title\">"
+    echo "<link rel=\"icon\" type=\"image/png\" href=\"favicon.png\"><link rel=\"apple-touch-icon\" href=\"apple-touch-icon.png\"><link rel=\"manifest\" href=\"$mf\"><meta name=\"apple-mobile-web-app-capable\" content=\"yes\"><meta name=\"mobile-web-app-capable\" content=\"yes\"><meta name=\"apple-mobile-web-app-status-bar-style\" content=\"black-translucent\"><meta name=\"apple-mobile-web-app-title\" content=\"$APP_NAME\">"
     sed -n '1,/<\/style>/p' "preview/$name.html" | sed "s#<style>#<style>$RESET#"
     echo '</head><body>'
     sed '1,/<\/style>/d' "preview/$name.html"
@@ -53,8 +51,8 @@ page(){ # name title css-files body-file js-files manifest
   } > "../public/$name.html"
 }
 sed "s/^export //" crests.mjs > crests.gen.js
-page index "$APP_NAME" "theme.css app.css" app-body.html "badge.js crests.gen.js demo-data.js app-core.js app-actions.js app-views.js pwa.js" app.webmanifest
-page live "$APP_NAME Live" "theme.css live.css" live-body.html "badge.js crests.gen.js demo-data.js live.js pwa.js" live.webmanifest
-page me "$APP_NAME Player" "theme.css me.css" me-body.html "badge.js crests.gen.js demo-data.js me.js pwa.js" me.webmanifest
-rm -f ../public/manifest.webmanifest
+page index "$APP_NAME" "theme.css app.css" app-body.html "badge.js crests.gen.js demo-data.js app-core.js app-actions.js app-views.js signin.js pwa.js" app.webmanifest
+page live "$APP_NAME Live" "theme.css live.css" live-body.html "badge.js crests.gen.js demo-data.js signin.js live.js pwa.js" app.webmanifest
+page me "$APP_NAME Player" "theme.css me.css" me-body.html "badge.js crests.gen.js demo-data.js signin.js me.js pwa.js" app.webmanifest
+rm -f ../public/manifest.webmanifest ../public/live.webmanifest ../public/me.webmanifest
 echo built

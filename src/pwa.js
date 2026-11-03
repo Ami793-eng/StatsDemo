@@ -1,6 +1,6 @@
 /* ========== installable app (PWA) ==========
-   Shared by every page. Each page links its own manifest (built by build.sh) so the scorer/coach app,
-   the public live page and the player page install separately, each opening on its own start page.
+   Shared by every page. One manifest for the whole app: it installs once and opens on the live page.
+
    - Android/Chrome/Edge: an "Install app" button appears in the header when the browser offers its
      install prompt (beforeinstallprompt), and disappears once installed.
    - iPhone/iPad Safari: no install prompt exists, so a one-time tip says "Tap Share, then Add to Home Screen".
@@ -56,3 +56,4 @@
   }
   try{if('serviceWorker' in navigator&&(location.protocol==='https:'||location.hostname==='localhost')&&!inFrame)navigator.serviceWorker.register('sw.js').catch(()=>{})}catch(e){}
 })();
+document.addEventListener('click',e=>{if(e.target.closest('#signout')){e.preventDefault();Role.out()}});

@@ -1,7 +1,7 @@
 // Offline support: the app works at the pitch with no signal. Pages are cached on install;
 // fresh copies are fetched when online (network first, cache fallback).
-const CACHE='gb-v6';
-const SHELL=['index.html','live.html','me.html','badge.png','favicon.png','apple-touch-icon.png','icon-192.png','icon-512.png','app.webmanifest','live.webmanifest','me.webmanifest'];
+const CACHE='gb-v7';
+const SHELL=['index.html','live.html','me.html','badge.png','favicon.png','apple-touch-icon.png','icon-192.png','icon-512.png','app.webmanifest'];
 self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(SHELL)).then(()=>self.skipWaiting()))});
 self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()))});
 // Offline fallback for a page: the same page if cached (clean URLs /live and /me map to their .html), else the coach app.

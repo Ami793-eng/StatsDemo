@@ -152,4 +152,5 @@ window.addEventListener('storage',e=>{if(e.key===DEMO_KEY)poll()});
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')poll()});
 setInterval(()=>{if(document.visibilityState==='visible')poll()},3000);
 
+signinButton();
 poll();

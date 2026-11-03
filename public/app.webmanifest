@@ -1,9 +1,9 @@
 {
-  "id": "/index.html",
+  "id": "/live.html",
   "name": "Gaels Beo",
   "short_name": "Gaels Beo",
-  "description": "Live match scoring and stats for your club",
-  "start_url": "index.html",
+  "description": "Live scores, match scoring and stats for your club",
+  "start_url": "live.html",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",

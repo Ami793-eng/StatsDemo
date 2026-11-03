@@ -392,6 +392,11 @@ function render(){
 }
 (function boot(){
   S=loadDemo();S.teams.forEach(normTeam);
+  // Arriving from "Sign in" on the live page: open as that person (demo stand-in for a real login)
+  try{const q=new URLSearchParams(location.search),as=q.get('as'),pin=q.get('pin');
+    if(as&&S.users.some(u=>u.id===as)){S.me=as;S.active=null;S.tab=isScorer()?'match':'stats';ui.statsTeam=null;
+      if(pin){const f=S.fixtures.find(x=>x.pin===pin&&x.scorer===as&&!x.pinExpired);if(f&&!(f.pinOk=f.pinOk||[]).includes(as))f.pinOk.push(as)}
+      persist();history.replaceState(null,'',location.pathname)}}catch(e){}
   if(S.active&&!active())S.active=null;
   render();
   const m=active();if(m&&m.clock.running&&canScore(m))keepAwake(true);
