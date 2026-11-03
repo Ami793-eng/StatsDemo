@@ -397,5 +397,5 @@ function render(){
   const m=active();if(m&&m.clock.running&&canScore(m))keepAwake(true);
   document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'){const m=active();if(m&&m.clock.running&&canScore(m)){wake=null;keepAwake(true)}}});
   setInterval(()=>{if(S.tab==='live'&&document.visibilityState==='visible'&&document.getElementById('sheet').hidden){const keep={me:S.me,tab:S.tab};try{const f=JSON.parse(localStorage.getItem(DEMO_KEY)||'null');if(f&&f.v===S.v)S=Object.assign(f,keep)}catch(e){}render()}},5000);
-  try{if('serviceWorker' in navigator&&location.protocol==='https:'&&window.top===window.self)navigator.serviceWorker.register('sw.js').catch(()=>{})}catch(e){}
+  
 })();

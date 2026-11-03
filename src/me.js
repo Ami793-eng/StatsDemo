@@ -77,7 +77,8 @@ function show(d){
   document.getElementById('out').onclick=()=>{st.set('');err='';try{history.replaceState(null,'',location.pathname)}catch(e){}vCode()};
 }
 document.getElementById('badge').innerHTML=`<img src="${OWN_BADGE}" alt="">`;
+try{document.getElementById('club').textContent=loadDemo().club}catch(e){}
 const q=clean(new URLSearchParams(location.search).get('code'));
 const saved=q||st.get();
 if(saved)look(saved);else vCode();
-try{if('serviceWorker' in navigator&&location.protocol==='https:'&&window.top===window.self)navigator.serviceWorker.register('sw.js').catch(()=>{})}catch(e){}
+

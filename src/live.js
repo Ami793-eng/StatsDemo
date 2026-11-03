@@ -151,5 +151,5 @@ async function shareCard(f){
 window.addEventListener('storage',e=>{if(e.key===DEMO_KEY)poll()});
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')poll()});
 setInterval(()=>{if(document.visibilityState==='visible')poll()},3000);
-try{if('serviceWorker' in navigator&&location.protocol==='https:'&&window.top===window.self)navigator.serviceWorker.register('sw.js').catch(()=>{})}catch(e){}
+
 poll();

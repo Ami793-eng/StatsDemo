@@ -1,4 +1,4 @@
-/* Owenmore Gaels shared theme: royal blue band + amber accents. Layout: blue header band with badge, one working column of panels. */
+/* Shared theme (default club colours: royal blue band + amber accents; club colours are a setting). Layout: coloured header band with badge, one working column of panels. */
 :root{
   --bg:#f1f3fa; --surface:#ffffff; --surface2:#ecf0f9; --line:#d3d9ea; --fg:#0f1a3a; --muted:#566079;
   --royal:#1f3fbf; --royal-2:#132a86; --royal-text:#1f3fbf; --royal-soft:#e3e9fb;
@@ -148,3 +148,11 @@ td .pc{color:var(--muted);font-size:12px;margin-left:4px}
 .pkey .m{background:none!important;border:0!important;box-shadow:none!important;position:relative}
 .pkey .m::before,.pkey .m::after,.dotk.m::before,.dotk.m::after{content:"";position:absolute;left:50%;top:50%;width:13px;height:3px;background:var(--miss);border-radius:2px}
 .pkey .m::before,.dotk.m::before{transform:translate(-50%,-50%) rotate(45deg)} .pkey .m::after,.dotk.m::after{transform:translate(-50%,-50%) rotate(-45deg)}
+
+/* Install app (pwa.js): header button + one-time iPhone tip */
+.instbtn{background:var(--amber)!important;border-color:var(--amber)!important;color:var(--amber-ink)!important;flex:none;margin-left:auto}
+.instbtn + .bellbtn{margin-left:0}
+.iostip{position:fixed;left:0;right:0;bottom:0;z-index:50;padding:0 max(16px,env(safe-area-inset-left,0px)) calc(12px + env(safe-area-inset-bottom,0px))}
+.iostip-in{max-width:520px;margin:0 auto;display:flex;align-items:center;gap:10px;background:var(--surface);color:var(--fg);border:1px solid var(--line);border-top:4px solid var(--amber);border-radius:var(--r);padding:12px 14px;box-shadow:0 8px 28px rgba(0,0,0,.28)}
+.iostip-in p{margin:0;flex:1;font-size:14px}
+.iostip-ic{width:26px;height:26px;flex:none;color:var(--royal-text)}

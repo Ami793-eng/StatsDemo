@@ -3,9 +3,24 @@
 A no-login demo of the full club app. No server, no database: everything is saved on the device.
 
 ## Put it online
-1. Go to https://app.netlify.com/drop
-2. Drag the **public** folder onto the page.
+1. Connect the Netlify site to this repository (see Netlify below), or go to https://app.netlify.com/drop and drag the **public** folder onto the page.
 3. Open the link on a phone and "Add to Home Screen" – it installs like an app and works with no signal.
+
+## Install to home screen (build step 1)
+Each page installs as its own app with its own start page and manifest (`src/build.sh` writes them):
+| Manifest | Opens on | For |
+|---|---|---|
+| `app.webmanifest` | `index.html` | Coaches, scorers, admin |
+| `live.webmanifest` | `live.html` | Public / parents |
+| `me.webmanifest` | `me.html` | Players / parents |
+
+- **Android / Chrome / Edge:** an orange **Install app** button appears in the header when the browser allows install. It is hidden once installed or when opened from the home screen.
+- **iPhone / iPad:** a one-time tip, "Tap Share, then Add to Home Screen" (shown once per page).
+- Install code: `src/pwa.js`. Service worker: `public/sw.js` (offline cache; bump `CACHE` when the file list changes).
+- The product name is set once at the top of `src/build.sh` (`APP_NAME`, working name until the final name is chosen). Club name, crest and colours stay as in-app settings.
+
+## Netlify
+`netlify.toml` publishes `public/` with no build step. Connect the Netlify site to this GitHub repo and every push deploys. Run `sh src/build.sh` before committing source changes.
 
 ## Pages
 | Page | Who | Try this |
